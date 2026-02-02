@@ -1,16 +1,21 @@
 import type { Job } from '../types/job';
+import type { Lane } from '../types/kanban';
 
 interface JobCardProps {
   job: Job;
   onApplyClick: (jobId: string, applyLink: string) => void;
+  walletAddress?: string;
+  hasClicked?: boolean;
+  onMigration?: (newLane: Lane, jobTitle: string) => void;
 }
 
 /**
  * Individual job card component
  * Displays job title, company, location, and salary (if available) with Quick Apply CTA
+ * Shows "Already applied" badge if user has clicked this job before
  * Styled with degen aesthetic - black bg, purple border, gradient button
  */
-export function JobCard({ job, onApplyClick }: JobCardProps) {
+export function JobCard({ job, onApplyClick, hasClicked = false }: JobCardProps) {
   // Format location, handling missing values gracefully
   const formatLocation = () => {
     const parts = [job.job_city, job.job_state].filter(Boolean);
@@ -40,10 +45,24 @@ export function JobCard({ job, onApplyClick }: JobCardProps) {
   const salary = formatSalary();
 
   return (
-    <div className="bg-black border border-purple-500/50 rounded-lg p-4 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-200">
+    <div className={`relative bg-black border rounded-lg p-4 hover:shadow-lg transition-all duration-200 ${
+      hasClicked
+        ? 'border-green-500/30 hover:border-green-400/50 hover:shadow-green-500/10'
+        : 'border-purple-500/50 hover:border-purple-400 hover:shadow-purple-500/20'
+    }`}>
+      {/* Already Applied Badge */}
+      {hasClicked && (
+        <div className="absolute top-2 right-2 bg-green-500/20 border border-green-500/50 text-green-400 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Applied
+        </div>
+      )}
+
       {/* Main content area with job info */}
       <div className="flex justify-between items-start gap-4">
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0" style={{ paddingRight: hasClicked ? '80px' : '0' }}>
           {/* Job Title */}
           <h3 className="text-lg font-bold text-white mb-1 leading-tight">
             {job.job_title}
