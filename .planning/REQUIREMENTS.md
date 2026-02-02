@@ -78,8 +78,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | JOBS-03 | Phase 1 | Complete |
 | SYNC-01 | Phase 1 | Complete |
 | SYNC-02 | Phase 1 | Complete |
-| KANB-01 | Phase 2 | Pending |
-| KANB-02 | Phase 2 | Pending |
+| KANB-01 | Phase 2 | Complete |
+| KANB-02 | Phase 2 | Complete |
 | KANB-03 | Phase 3 | Pending |
 | KANB-04 | Phase 3 | Pending |
 

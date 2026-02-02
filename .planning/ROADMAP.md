@@ -47,8 +47,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Supabase setup + click tracking service + Already Applied badge
-- [ ] 02-02-PLAN.md — Kanban board UI (desktop 3-col, mobile tabs) + migration toasts
+- [x] 02-01-PLAN.md — Supabase setup + click tracking service + Already Applied badge
+- [x] 02-02-PLAN.md — Kanban board UI (desktop 3-col, mobile tabs) + migration toasts
 
 ### Phase 3: Real-Time & Polish
 **Goal**: All users see lane migrations in real-time with playful animations
@@ -72,9 +72,9 @@ Phases execute in numeric order: 1 -> 2 -> 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Auth | 2/2 | Complete | 2026-02-02 |
-| 2. Engagement Core | 0/2 | Not started | - |
+| 2. Engagement Core | 2/2 | Complete | 2026-02-02 |
 | 3. Real-Time & Polish | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-02*
-*Last updated: 2026-02-02 after Phase 2 planning*
+*Last updated: 2026-02-02 after Phase 2 execution*
