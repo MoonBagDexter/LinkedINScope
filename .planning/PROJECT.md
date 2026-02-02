@@ -2,11 +2,11 @@
 
 ## What This Is
 
-A community-driven job aggregator for service industry roles (McDonald's, Subway, retail, etc.) where job listings migrate through a Kanban pipeline based on collective user engagement. Instead of a static job board, listings "graduate" through columns as real users click Quick Apply — essentially crowdsourcing quality signals to surface the most viable opportunities.
+A community-driven job aggregator and "migration engine" for service-industry roles (fast food, retail, hospitality). Jobs are automatically sourced and displayed on a gamified Kanban board where collective user engagement determines which listings are worth pursuing. Think "Product Hunt for minimum wage jobs" — the community filters quality through action.
 
 ## Core Value
 
-Jobs that get engagement are worth applying to. The collective action of users clicking Quick Apply filters out dead-end listings and surfaces active, real opportunities.
+**Jobs surface based on real engagement, not algorithms.** When users click Quick Apply, they vote with intent — and the best opportunities rise automatically.
 
 ## Requirements
 
@@ -16,50 +16,49 @@ Jobs that get engagement are worth applying to. The collective action of users c
 
 ### Active
 
-- [ ] User can sign up and log in (required for Quick Apply)
-- [ ] Jobs display in 3-column Kanban: New → Trending → Graduated
-- [ ] User can Quick Apply (redirects to original posting, tracks click)
-- [ ] Jobs migrate to Trending at ~10-15 clicks
-- [ ] Jobs graduate at ~20-30 clicks (double threshold)
-- [ ] Jobs expire after 24 hours if not graduated
-- [ ] Each column has a max display limit
-- [ ] Job cards show location, title, company
-- [ ] Smooth animations when cards move between columns
-- [ ] Global feed (all users see same jobs)
+- [ ] Kanban board with 3 lanes: New Listings, Trending, Graduated
+- [ ] Automated job sourcing via JSearch API (service-industry roles)
+- [ ] Quick Apply button that redirects to original posting and tracks click
+- [ ] Click thresholds trigger automatic lane migration
+- [ ] Phantom wallet authentication (Web3-native, no traditional auth)
+- [ ] Real-time updates when jobs migrate between lanes
+- [ ] Playful "degenerate" animations for card movement
 
 ### Out of Scope
 
-- Real-time WebSocket updates — refresh/polling is fine for MVP
-- Complex location filtering — global feed with location on card
-- In-app applications — redirect model only
-- Automated scraping (v1) — figure out data source separately
+- User profiles with application history — keep it simple, auth is just for spam prevention
+- Manual job submissions — all content is automated
+- Apply-through-platform — we redirect, don't handle applications
+- Mobile app — web-first, Vercel deployment
 
 ## Context
 
-**Target users:** Service industry job seekers looking for entry-level/minimum wage roles. These jobs move fast and often have simple application processes.
+**Target users:** High-volume job seekers in service industry looking for quick, verified leads. People applying to 20+ jobs/day who want the community to pre-filter.
 
-**Why this approach:** Traditional job boards are static and filled with stale/fake listings. By requiring engagement to "promote" a listing, the community naturally filters quality.
+**Job source:** JSearch API via RapidAPI aggregates Indeed, LinkedIn, Glassdoor. 500 free requests/month on free tier. Focus on: McDonald's, Subway, Walmart, Target, retail, food service, hospitality.
 
-**Data source:** TBD — need to research options. Service industry jobs are often on Snagajob, Indeed, company career pages. May start with manual submission or simple scraping as MVP, then expand.
+**Engagement thresholds (initial):**
+- New → Trending: 5 Quick Apply clicks
+- Trending → Graduated: 20 Quick Apply clicks
+- These are tunable and should be configurable.
 
-**Project timeline:** Ship fast — this is a working prototype, not a long-term platform.
+**Animation style:** "Degenerate" — playful, chaotic, high-energy. Cards should visibly slide between columns when thresholds are hit.
 
 ## Constraints
 
-- **Tech stack**: Next.js frontend, Supabase backend — already decided
-- **Animations**: Framer Motion for card transitions
-- **Complexity**: Keep it simple — favor shipping over perfection
-- **Auth**: Required for Quick Apply to prevent gaming
+- **Tech stack**: Next.js 14+ (App Router), Supabase (auth + database + realtime), Framer Motion (animations)
+- **Deployment**: Vercel
+- **API limits**: JSearch free tier = 500 requests/month. Need to cache aggressively or batch fetch jobs on schedule.
+- **Legal**: No direct scraping of job boards. Use official APIs only.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Redirect-based Quick Apply | Simpler than in-app applications, still tracks engagement | — Pending |
-| Auth required for clicks | Prevents spam/gaming, enables per-user tracking | — Pending |
-| 24hr expiry for non-graduated | Service jobs move fast, keeps board fresh | — Pending |
-| Global feed over location filtering | Simpler for MVP, location shown on card | — Pending |
-| Polling over WebSocket | Simpler real-time, good enough for MVP | — Pending |
+| JSearch API for job sourcing | Aggregates multiple boards legally, has free tier, includes service-industry roles | — Pending |
+| Supabase for backend | Provides auth, database, and realtime subscriptions in one package. Good DX with Next.js | — Pending |
+| Redirect model (not apply-through) | Simpler to build, avoids legal issues with collecting applicant data | — Pending |
+| Phantom wallet only | Web3-native auth, Phantom provides friction barrier against spam, crypto-native audience | — Pending |
 
 ---
 *Last updated: 2026-02-02 after initialization*
