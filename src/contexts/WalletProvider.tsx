@@ -4,8 +4,8 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
 
-// Import wallet adapter styles
-import '@solana/wallet-adapter-react-ui/styles.css';
+// Note: Wallet adapter styles are imported in main.tsx after Tailwind
+// to ensure proper CSS cascade order
 
 interface WalletProviderWrapperProps {
   children: ReactNode;
