@@ -20,7 +20,6 @@ export function JobCard({ job, onApplyClick }: JobCardProps) {
   // Format salary range - returns null if no salary data available
   const formatSalary = (): string | null => {
     if (job.job_min_salary && job.job_max_salary) {
-      const currency = job.job_salary_currency || 'USD';
       const period = job.job_salary_period || 'YEAR';
       const periodLabel = period === 'HOUR' ? '/hr' : period === 'YEAR' ? '/yr' : `/${period.toLowerCase()}`;
       return `$${job.job_min_salary.toLocaleString()} - $${job.job_max_salary.toLocaleString()}${periodLabel}`;
