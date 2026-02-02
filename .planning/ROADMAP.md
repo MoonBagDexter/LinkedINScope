@@ -13,7 +13,8 @@ LinkedInScope delivers a community-driven job board where engagement determines 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Auth** - Setup project, connect Phantom wallet, display jobs from JSearch API
-- [ ] **Phase 2: Engagement Core** - Build click tracking, Kanban board, and automatic lane migration logic
+- [x] **Phase 2: Engagement Core** - Build click tracking, Kanban board, and automatic lane migration logic
+- [ ] **Phase 2.5: Backend Job Caching (INSERTED)** - Move job fetching to backend, eliminate per-user API calls
 - [ ] **Phase 3: Real-Time & Polish** - Add live updates across users and playful animations for card movement
 
 ## Phase Details
@@ -50,9 +51,27 @@ Plans:
 - [x] 02-01-PLAN.md — Supabase setup + click tracking service + Already Applied badge
 - [x] 02-02-PLAN.md — Kanban board UI (desktop 3-col, mobile tabs) + migration toasts
 
+### Phase 2.5: Backend Job Caching (INSERTED)
+**Goal**: Eliminate slow per-user JSearch API calls by moving job fetching to backend service
+**Depends on**: Phase 2
+**Requirements**: Performance optimization for V1 launch
+**Success Criteria** (what must be TRUE):
+  1. Backend service fetches jobs from JSearch API once per day (or configurable interval)
+  2. Full job data stored in Supabase jobs table with caching columns
+  3. Frontend queries Supabase directly (no JSearch API calls from client)
+  4. Initial page load completes in <2 seconds (vs current slow load)
+  5. API quota usage reduced by 90%+ (one fetch per interval vs per-user)
+**Plans**: 2 plans
+
+Plans:
+- [ ] 02.5-01-PLAN.md — Database schema + Edge Function for job sync
+- [ ] 02.5-02-PLAN.md — Frontend refactor + pg_cron scheduling
+
+**Context**: User feedback during Phase 2 execution identified that calling JSearch API per-user causes slow initial load. This urgent insertion addresses performance before V1 launch.
+
 ### Phase 3: Real-Time & Polish
 **Goal**: All users see lane migrations in real-time with playful animations
-**Depends on**: Phase 2
+**Depends on**: Phase 2.5
 **Requirements**: KANB-03, KANB-04
 **Success Criteria** (what must be TRUE):
   1. When a job migrates lanes, all connected users see the update within 2 seconds
@@ -67,14 +86,15 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3
+Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Auth | 2/2 | Complete | 2026-02-02 |
 | 2. Engagement Core | 2/2 | Complete | 2026-02-02 |
-| 3. Real-Time & Polish | 0/1 | Not started | - |
+| 2.5. Backend Job Caching | 0/2 | Planned | - |
+| 3. Real-Time & Polish | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-02-02*
-*Last updated: 2026-02-02 after Phase 2 execution*
+*Last updated: 2026-02-02 after Phase 2.5 planning*
