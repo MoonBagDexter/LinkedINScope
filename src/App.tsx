@@ -1,14 +1,48 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { WalletProviderWrapper } from './contexts/WalletProvider';
+import { Header } from './components/Header';
+
+// Configure QueryClient with aggressive caching to conserve API quota
+// JSearch free tier = 500 requests/month, so we cache heavily
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Data considered fresh for 24 hours
+      staleTime: 1000 * 60 * 60 * 24,
+      // Keep cached data for 48 hours
+      gcTime: 1000 * 60 * 60 * 48,
+      // Don't refetch on window focus (preserves quota)
+      refetchOnWindowFocus: false,
+      // Don't refetch on mount if data exists (preserves quota)
+      refetchOnMount: false,
+      // Only retry failed requests once
+      retry: 1,
+    },
+  },
+});
+
 function App() {
   return (
-    <div className="min-h-screen bg-black text-white">
-      <h1 className="text-4xl font-bold text-center pt-20 text-purple-500">
-        LinkedInScope
-      </h1>
-      <p className="text-center text-gray-400 mt-4">
-        Wallet connection coming soon...
-      </p>
-    </div>
-  )
+    <QueryClientProvider client={queryClient}>
+      <WalletProviderWrapper>
+        <div className="min-h-screen bg-black text-white">
+          <Header />
+
+          {/* Main content area */}
+          <main className="max-w-7xl mx-auto px-4 py-8">
+            <div className="text-center py-20">
+              <p className="text-gray-400 text-lg">
+                Jobs will appear here
+              </p>
+              <p className="text-gray-600 text-sm mt-2">
+                Connect your wallet to get started
+              </p>
+            </div>
+          </main>
+        </div>
+      </WalletProviderWrapper>
+    </QueryClientProvider>
+  );
 }
 
-export default App
+export default App;
