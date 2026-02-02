@@ -44,11 +44,11 @@ Plans:
   3. Jobs automatically move from New → Trending at 5 clicks
   4. Jobs automatically move from Trending → Graduated at 20 clicks
   5. Lane thresholds are configurable without code changes
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD during planning
-- [ ] 02-02: TBD during planning
+- [ ] 02-01-PLAN.md — Supabase setup + click tracking service + Already Applied badge
+- [ ] 02-02-PLAN.md — Kanban board UI (desktop 3-col, mobile tabs) + migration toasts
 
 ### Phase 3: Real-Time & Polish
 **Goal**: All users see lane migrations in real-time with playful animations
@@ -67,7 +67,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -77,4 +77,4 @@ Phases execute in numeric order: 1 → 2 → 3
 
 ---
 *Roadmap created: 2026-02-02*
-*Last updated: 2026-02-02 after Phase 1 completion*
+*Last updated: 2026-02-02 after Phase 2 planning*
