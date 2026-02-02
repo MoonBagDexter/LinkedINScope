@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+/* Custom theme for degen aesthetic */
+@theme {
+  --color-degen-purple: #a855f7;
+  --color-degen-pink: #ec4899;
+  --color-degen-cyan: #22d3ee;
+  --color-degen-lime: #84cc16;
+  --color-degen-orange: #f97316;
+  --color-surface: #0a0a0a;
+  --color-surface-elevated: #1a1a1a;
+  --color-surface-hover: #2a2a2a;
+}
+
+/* Base styles for dark theme */
+body {
+  @apply bg-black text-white min-h-screen antialiased;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Custom scrollbar for degen aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
