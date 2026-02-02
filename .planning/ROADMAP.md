@@ -28,11 +28,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can view job cards displaying title, company, location, and pay
   4. User can click Quick Apply to redirect to original job posting
   5. System fetches and displays service-industry jobs from JSearch API
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD during planning
-- [ ] 01-02: TBD during planning
+- [ ] 01-01-PLAN.md — Project setup + Phantom wallet auth with session persistence
+- [ ] 01-02-PLAN.md — JSearch API integration + job card display with Quick Apply
 
 ### Phase 2: Engagement Core
 **Goal**: Jobs automatically migrate between lanes based on community click engagement
@@ -71,10 +71,10 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 0/2 | Not started | - |
+| 1. Foundation & Auth | 0/2 | Planned | - |
 | 2. Engagement Core | 0/2 | Not started | - |
 | 3. Real-Time & Polish | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-02*
-*Last updated: 2026-02-02 after roadmap creation*
+*Last updated: 2026-02-02 after Phase 1 planning*
