@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase';
-import { useJobs } from './useJobs';
 import type { Job } from '../types/job';
 import type { Lane } from '../types/kanban';
 
@@ -13,33 +12,49 @@ export interface JobWithClickCount extends Job {
 /**
  * Hook to fetch jobs organized by lane
  *
- * Strategy: Fetch jobs from JSearch API, fetch lane assignments from Supabase,
- * then merge client-side to avoid duplicating job content in database.
+ * Strategy: Query Supabase jobs table (populated by Edge Function job-sync)
+ * instead of JSearch API. This provides instant cached data and preserves API quota.
  *
- * Jobs not yet in Supabase default to 'new' lane with 0 clicks.
+ * Jobs without lane/click_count default to 'new' lane with 0 clicks.
  */
 export function useLaneJobs() {
-  // Fetch jobs from JSearch API
-  const { data: apiJobs, isLoading: apiLoading, error: apiError } = useJobs();
-
-  // Fetch lane assignments from Supabase
-  const { data: laneData, isLoading: laneLoading } = useQuery({
-    queryKey: ['lane-jobs'],
+  // Fetch all active jobs from Supabase cache
+  const { data: jobs, isLoading, error } = useQuery({
+    queryKey: ['cached-jobs'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('jobs')
-        .select('job_id, lane, click_count');
+        .select('*')
+        .eq('is_active', true)
+        .order('last_seen', { ascending: false });
+
       if (error) throw error;
-      return data as { job_id: string; lane: Lane; click_count: number }[];
+
+      // Map database columns to Job type
+      return (data || []).map((row): JobWithClickCount => ({
+        job_id: row.job_id,
+        job_title: row.job_title,
+        employer_name: row.employer_name,
+        employer_logo: row.employer_logo,
+        job_city: row.job_city,
+        job_state: row.job_state,
+        job_country: row.job_country,
+        job_apply_link: row.job_apply_link,
+        job_description: row.job_description,
+        job_min_salary: row.job_min_salary,
+        job_max_salary: row.job_max_salary,
+        job_salary_currency: row.job_salary_currency,
+        job_salary_period: row.job_salary_period,
+        click_count: row.click_count ?? 0,
+        lane: (row.lane as Lane) ?? 'new',
+      }));
     },
-    staleTime: 1000 * 30, // 30 seconds - lane data changes frequently with clicks
+    staleTime: 1000 * 60 * 5, // 5 minutes - backend refreshes daily, no need to poll frequently
   });
 
-  // Combine: assign lane to each job, default to 'new' if not in Supabase yet
+  // Group jobs by lane
   const jobsByLane = useMemo(() => {
-    if (!apiJobs) return { new: [], trending: [], graduated: [] };
-
-    const laneMap = new Map(laneData?.map(l => [l.job_id, l]) ?? []);
+    if (!jobs) return { new: [], trending: [], graduated: [] };
 
     const result: Record<Lane, JobWithClickCount[]> = {
       new: [],
@@ -47,19 +62,17 @@ export function useLaneJobs() {
       graduated: []
     };
 
-    for (const job of apiJobs) {
-      const laneInfo = laneMap.get(job.job_id);
-      const lane = laneInfo?.lane ?? 'new';
-      const click_count = laneInfo?.click_count ?? 0;
-      result[lane].push({ ...job, click_count, lane });
+    for (const job of jobs) {
+      const lane = job.lane ?? 'new';
+      result[lane].push(job);
     }
 
     return result;
-  }, [apiJobs, laneData]);
+  }, [jobs]);
 
   return {
     jobsByLane,
-    isLoading: apiLoading || laneLoading,
-    error: apiError
+    isLoading,
+    error
   };
 }

@@ -1,3 +1,11 @@
+/**
+ * @deprecated This service is no longer called from the frontend.
+ * JSearch API calls now happen server-side via Edge Function (job-sync).
+ * Frontend queries cached jobs from Supabase instead.
+ *
+ * This file is kept for reference only - safe to delete after Phase 2.5 verification.
+ */
+
 import axios from 'axios';
 import type { Job } from '../types/job';
 
