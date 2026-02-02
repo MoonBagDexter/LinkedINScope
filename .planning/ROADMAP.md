@@ -12,7 +12,7 @@ LinkedInScope delivers a community-driven job board where engagement determines 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Auth** - Setup project, connect Phantom wallet, display jobs from JSearch API
+- [x] **Phase 1: Foundation & Auth** - Setup project, connect Phantom wallet, display jobs from JSearch API
 - [ ] **Phase 2: Engagement Core** - Build click tracking, Kanban board, and automatic lane migration logic
 - [ ] **Phase 3: Real-Time & Polish** - Add live updates across users and playful animations for card movement
 
@@ -31,8 +31,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project setup + Phantom wallet auth with session persistence
-- [ ] 01-02-PLAN.md — JSearch API integration + job card display with Quick Apply
+- [x] 01-01-PLAN.md — Project setup + Phantom wallet auth with session persistence
+- [x] 01-02-PLAN.md — JSearch API integration + job card display with Quick Apply
 
 ### Phase 2: Engagement Core
 **Goal**: Jobs automatically migrate between lanes based on community click engagement
@@ -71,10 +71,10 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 0/2 | Planned | - |
+| 1. Foundation & Auth | 2/2 | Complete | 2026-02-02 |
 | 2. Engagement Core | 0/2 | Not started | - |
 | 3. Real-Time & Polish | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-02*
-*Last updated: 2026-02-02 after Phase 1 planning*
+*Last updated: 2026-02-02 after Phase 1 completion*
