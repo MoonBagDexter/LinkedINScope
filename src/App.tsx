@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletProviderWrapper } from './contexts/WalletProvider';
 import { Header } from './components/Header';
+import { JobList } from './components/JobList';
 
 // Configure QueryClient with aggressive caching to conserve API quota
 // JSearch free tier = 500 requests/month, so we cache heavily
@@ -30,14 +31,7 @@ function App() {
 
           {/* Main content area */}
           <main className="max-w-7xl mx-auto px-4 py-8">
-            <div className="text-center py-20">
-              <p className="text-gray-400 text-lg">
-                Jobs will appear here
-              </p>
-              <p className="text-gray-600 text-sm mt-2">
-                Connect your wallet to get started
-              </p>
-            </div>
+            <JobList />
           </main>
         </div>
       </WalletProviderWrapper>
