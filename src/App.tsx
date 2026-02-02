@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletProviderWrapper } from './contexts/WalletProvider';
 import { Header } from './components/Header';
-import { JobList } from './components/JobList';
+import { KanbanBoard } from './components/KanbanBoard';
 
 // Configure QueryClient with aggressive caching to conserve API quota
 // JSearch free tier = 500 requests/month, so we cache heavily
@@ -31,7 +31,7 @@ function App() {
 
           {/* Main content area */}
           <main className="max-w-7xl mx-auto px-4 py-8">
-            <JobList />
+            <KanbanBoard />
           </main>
         </div>
       </WalletProviderWrapper>
