@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 ## Current Position
 
-Phase: 2 of 3 (Engagement Core) - COMPLETE
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-02-02 - Completed 02-02-PLAN.md (Kanban Board UI)
+Phase: 2.5 of 3 (Backend Job Caching) - IN PROGRESS
+Plan: 1 of 2 in current phase
+Status: Plan 02.5-01 complete
+Last activity: 2026-02-02 - Completed 02.5-01-PLAN.md (Backend Job Caching Artifacts)
 
-Progress: [████░░░░░░] 40%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 15min
-- Total execution time: 60min
+- Total plans completed: 5
+- Average duration: 13min
+- Total execution time: 65min
 
 **By Phase:**
 
@@ -29,10 +29,11 @@ Progress: [████░░░░░░] 40%
 |-------|-------|-------|----------|
 | 01-foundation-auth | 2 | 37min | 18.5min |
 | 02-engagement-core | 2 | 23min | 11.5min |
+| 02.5-backend-job-caching | 1 | 5min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (12min), 01-02 (25min), 02-01 (5min), 02-02 (18min)
-- Trend: Stable - Phase 2 completing with consistent velocity
+- Last 5 plans: 01-02 (25min), 02-01 (5min), 02-02 (18min), 02.5-01 (5min)
+- Trend: Improving - Recent plans completing faster as architecture stabilizes
 
 *Updated after each plan completion*
 
@@ -59,6 +60,19 @@ Recent decisions affecting current work:
 - [02-02]: Client-side lane composition (merge JSearch API + Supabase data)
 - [02-02]: Mobile tabs for lane switching (not swipe gestures)
 - [02-02]: Progress bars show click counts without revealing thresholds
+- [02.5-01]: Migration uses IF NOT EXISTS for idempotency (safe to run multiple times)
+- [02.5-01]: Edge Function uses native fetch (not axios) for Deno compatibility
+- [02.5-01]: Upsert preserves click_count and lane (not included in payload)
+- [02.5-01]: Retry logic: 3 attempts, exponential backoff with 30% jitter
+- [02.5-01]: Mark existing jobs inactive before sync, reactivate during upsert
+
+### Roadmap Evolution
+
+- Phase 2.5 inserted after Phase 2: Backend Job Caching (URGENT)
+  - Reason: User feedback during Phase 2 execution identified slow initial load times
+  - Problem: JSearch API called per-user causes poor UX and quota burn
+  - Solution: Backend service fetches once/day, stores in Supabase, frontend queries cache
+  - Priority: Must be completed before V1 launch
 
 ### Pending Todos
 
@@ -80,8 +94,8 @@ None.
 **Performance - JSearch API Per-User Calls (Phase 2):**
 - Current: JSearch API called per-user session causes slow initial load
 - User feedback: "Loading jobs is slow"
-- V1 TODO: Move to backend caching (server fetches, users read from cache)
-- Not blocking for prototype, acceptable performance for Phase 2
+- BEING ADDRESSED: Phase 2.5 adds backend caching (server fetches, users read from cache)
+- Status: Plan 02.5-01 complete (artifacts), Plan 02.5-02 pending (deployment)
 
 **Realtime Message Limits (Phase 3):**
 - Supabase free tier has message quotas
@@ -91,7 +105,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 02-02-PLAN.md (Kanban Board UI) - Phase 2 complete
+Stopped at: Completed 02.5-01-PLAN.md (Backend Job Caching Artifacts)
 Resume file: None
 
 ## Phase Completion Summaries
@@ -148,4 +162,18 @@ Key artifacts:
 
 Performance note: User identified JSearch API per-user calls as slow. V1 TODO: backend caching.
 
-**Next:** Phase 3 (V1 Refinements) per ROADMAP.md
+### Phase 2.5: Backend Job Caching - IN PROGRESS (1/2 plans complete)
+
+**Plan 02.5-01 Complete - Backend Job Caching Artifacts:**
+
+Delivered:
+- Database migration with all JSearch API fields (job_title, employer_name, location, salary, logo, description)
+- Caching control columns (is_active, last_seen) for stale job detection
+- Edge Function code with retry logic and error handling
+- Upsert pattern preserves engagement data (click_count, lane)
+
+Key artifacts:
+- `supabase/migrations/20260202_add_job_caching.sql` - Schema migration with idempotency
+- `supabase/functions/job-sync/index.ts` - Deno Edge Function for daily sync
+
+**Next:** Plan 02.5-02 (Backend Deployment) - Deploy migration and Edge Function to Supabase
