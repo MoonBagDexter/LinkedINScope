@@ -71,23 +71,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| JOBS-01 | TBD | Pending |
-| JOBS-02 | TBD | Pending |
-| JOBS-03 | TBD | Pending |
-| KANB-01 | TBD | Pending |
-| KANB-02 | TBD | Pending |
-| KANB-03 | TBD | Pending |
-| KANB-04 | TBD | Pending |
-| SYNC-01 | TBD | Pending |
-| SYNC-02 | TBD | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| JOBS-01 | Phase 1 | Pending |
+| JOBS-02 | Phase 1 | Pending |
+| JOBS-03 | Phase 1 | Pending |
+| SYNC-01 | Phase 1 | Pending |
+| SYNC-02 | Phase 1 | Pending |
+| KANB-01 | Phase 2 | Pending |
+| KANB-02 | Phase 2 | Pending |
+| KANB-03 | Phase 3 | Pending |
+| KANB-04 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 11 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 11
+- Mapped to phases: 11 (100% coverage)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-02*
-*Last updated: 2026-02-02 after initial definition*
+*Last updated: 2026-02-02 after roadmap creation (traceability complete)*
