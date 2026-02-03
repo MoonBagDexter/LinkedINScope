@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { JobCard } from './JobCard';
 import { ProgressBar } from './ProgressBar';
 import type { Lane } from '../types/kanban';
@@ -24,6 +25,24 @@ export function KanbanLane({
   clickedJobIds,
   onApplyClick,
 }: KanbanLaneProps) {
+  // Track which jobs are animating (recently migrated to this lane)
+  const [animatingIds, setAnimatingIds] = useState<Set<string>>(new Set());
+  const prevJobIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const currentIds = new Set(jobs.map(j => j.job_id));
+    const newIds = [...currentIds].filter(id => !prevJobIds.current.has(id));
+
+    if (newIds.length > 0) {
+      setAnimatingIds(new Set(newIds));
+      // Clear animation state after animation completes (300ms to allow 250ms animation + buffer)
+      const timer = setTimeout(() => setAnimatingIds(new Set()), 300);
+      return () => clearTimeout(timer);
+    }
+
+    prevJobIds.current = currentIds;
+  }, [jobs]);
+
   return (
     <div className="flex flex-col">
       {/* Lane header */}
@@ -45,6 +64,7 @@ export function KanbanLane({
                 onApplyClick={(jobId, applyLink) => onApplyClick(jobId, applyLink, job.job_title)}
                 walletAddress={walletAddress}
                 hasClicked={clickedJobIds?.has(job.job_id)}
+                isAnimating={animatingIds.has(job.job_id)}
               />
               {/* Progress bar below each card (except graduated) */}
               <ProgressBar current={job.click_count} lane={lane} />

@@ -7,6 +7,7 @@ interface JobCardProps {
   walletAddress?: string;
   hasClicked?: boolean;
   onMigration?: (newLane: Lane, jobTitle: string) => void;
+  isAnimating?: boolean;
 }
 
 /**
@@ -15,7 +16,7 @@ interface JobCardProps {
  * Shows "Already applied" badge if user has clicked this job before
  * Styled with degen aesthetic - black bg, purple border, gradient button
  */
-export function JobCard({ job, onApplyClick, hasClicked = false }: JobCardProps) {
+export function JobCard({ job, onApplyClick, hasClicked = false, isAnimating = false }: JobCardProps) {
   // Format location, handling missing values gracefully
   const formatLocation = () => {
     const parts = [job.job_city, job.job_state].filter(Boolean);
@@ -49,7 +50,7 @@ export function JobCard({ job, onApplyClick, hasClicked = false }: JobCardProps)
       hasClicked
         ? 'border-green-500/30 hover:border-green-400/50 hover:shadow-green-500/10'
         : 'border-purple-500/50 hover:border-purple-400 hover:shadow-purple-500/20'
-    }`}>
+    } ${isAnimating ? 'animate-[slideIn_250ms_cubic-bezier(0.215,0.61,0.355,1)]' : ''}`}>
       {/* Already Applied Badge */}
       {hasClicked && (
         <div className="absolute top-2 right-2 bg-green-500/20 border border-green-500/50 text-green-400 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
