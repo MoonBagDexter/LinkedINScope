@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLaneJobs } from '../hooks/useLaneJobs';
 import { useUserClicks } from '../hooks/useUserClicks';
 import { useClickTracking } from '../hooks/useClickTracking';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { KanbanLane } from './KanbanLane';
 import { MobileTabNav } from './MobileTabNav';
 import type { Lane } from '../types/kanban';
@@ -15,6 +17,20 @@ import type { Lane } from '../types/kanban';
 export function KanbanBoard() {
   const { publicKey } = useWallet();
   const walletAddress = publicKey?.toBase58();
+  const queryClient = useQueryClient();
+
+  // Enable real-time sync - invalidates cache when other users cause migrations
+  useRealtimeSync();
+
+  // Reconnect handling - refetch when coming back online
+  useEffect(() => {
+    const handleOnline = () => {
+      queryClient.invalidateQueries({ queryKey: ['cached-jobs'] });
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [queryClient]);
 
   // Fetch jobs organized by lane
   const { jobsByLane, isLoading, error } = useLaneJobs();

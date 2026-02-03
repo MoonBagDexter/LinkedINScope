@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { recordClick } from '../services/clickTracker';
 import { toast } from 'sonner';
+import { supabase } from '../services/supabase';
 import type { Lane } from '../types/kanban';
 
 interface TrackClickParams {
@@ -45,6 +46,21 @@ export function useClickTracking() {
         } else {
           toast.success('Click recorded, fren', {
             description: `${data.clickCount} total clicks`,
+          });
+        }
+
+        // Broadcast migration events to all users via realtime
+        if (data.newLane === 'trending' || data.newLane === 'graduated') {
+          const channel = supabase.channel('jobs-updates');
+          channel.send({
+            type: 'broadcast',
+            event: 'job-migrated',
+            payload: {
+              jobId: variables.jobId,
+              jobTitle: variables.jobTitle,
+              newLane: data.newLane,
+              clickCount: data.clickCount,
+            },
           });
         }
 
