@@ -44,13 +44,20 @@ export async function initSimulator(): Promise<void> {
   broadcastChannel = supabase.channel('jobs-updates');
   broadcastChannel.subscribe();
 
-  // Start click simulation - check every 10 seconds
-  setInterval(async () => {
-    await simulateClickIfNeeded();
-  }, 10000);
+  // Start click simulation - check every 45-90 seconds (random interval)
+  const scheduleNextClick = () => {
+    const delay = 45000 + Math.random() * 45000; // 45-90 seconds
+    setTimeout(async () => {
+      await simulateClickIfNeeded();
+      scheduleNextClick();
+    }, delay);
+  };
 
-  // Initial check after 5 seconds
-  setTimeout(() => simulateClickIfNeeded(), 5000);
+  // Initial check after 30 seconds
+  setTimeout(() => {
+    simulateClickIfNeeded();
+    scheduleNextClick();
+  }, 30000);
 }
 
 /**
