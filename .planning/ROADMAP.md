@@ -64,8 +64,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02.5-01-PLAN.md — Database schema + Edge Function for job sync
-- [ ] 02.5-02-PLAN.md — Frontend refactor + pg_cron scheduling
+- [x] 02.5-01-PLAN.md — Database schema + Edge Function for job sync
+- [x] 02.5-02-PLAN.md — Frontend refactor + pg_cron scheduling
 
 **Context**: User feedback during Phase 2 execution identified that calling JSearch API per-user causes slow initial load. This urgent insertion addresses performance before V1 launch.
 
@@ -92,9 +92,9 @@ Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3
 |-------|----------------|--------|-----------|
 | 1. Foundation & Auth | 2/2 | Complete | 2026-02-02 |
 | 2. Engagement Core | 2/2 | Complete | 2026-02-02 |
-| 2.5. Backend Job Caching | 0/2 | Planned | - |
+| 2.5. Backend Job Caching | 2/2 | Complete | 2026-02-03 |
 | 3. Real-Time & Polish | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-02-02*
-*Last updated: 2026-02-02 after Phase 2.5 planning*
+*Last updated: 2026-02-03 after Phase 2.5 execution*

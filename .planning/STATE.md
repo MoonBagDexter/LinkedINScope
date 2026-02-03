@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-02)
 
 **Core value:** Jobs surface based on real engagement, not algorithms
-**Current focus:** Phase 1 complete - Ready for Phase 2
+**Current focus:** Phase 2.5 complete - Ready for Phase 3
 
 ## Current Position
 
