@@ -1,6 +1,7 @@
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { truncateAddress } from '../utils/formatting';
+import { usePresence } from '../hooks/usePresence';
 
 /**
  * Header component with wallet connection UI
@@ -10,6 +11,7 @@ import { truncateAddress } from '../utils/formatting';
  */
 export function Header() {
   const { publicKey, connected } = useWallet();
+  const userCount = usePresence();
 
   return (
     <header className="w-full border-b border-gray-800 bg-black/80 backdrop-blur-sm sticky top-0 z-50">
@@ -26,6 +28,9 @@ export function Header() {
 
         {/* Wallet connection area */}
         <div className="flex items-center gap-4">
+          <span className="text-sm text-purple-300 font-medium">
+            {userCount} {userCount === 1 ? 'degen' : 'degens'} online
+          </span>
           {connected && publicKey && (
             <span className="text-sm text-gray-400 font-mono hidden sm:block">
               {truncateAddress(publicKey.toBase58())}
