@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 import { WalletProviderWrapper } from './contexts/WalletProvider';
 import { Header } from './components/Header';
 import { KanbanBoard } from './components/KanbanBoard';
@@ -33,6 +34,16 @@ function App() {
           <main className="max-w-7xl mx-auto px-4 py-8">
             <KanbanBoard />
           </main>
+
+          {/* Toast notifications - degen style with max 3 visible */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+            }}
+            visibleToasts={3}
+            richColors
+          />
         </div>
       </WalletProviderWrapper>
     </QueryClientProvider>

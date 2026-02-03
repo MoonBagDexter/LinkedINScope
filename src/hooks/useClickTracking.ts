@@ -29,21 +29,21 @@ export function useClickTracking() {
     },
     onSuccess: (data, variables) => {
       if (data.alreadyClicked) {
-        toast.info('You\'ve already applied to this job', {
-          description: 'Click recorded earlier',
+        toast.info('Already sent it, anon', {
+          description: 'Your click was recorded earlier',
         });
       } else if (data.success) {
-        // Show migration toast if job moved to new lane
+        // Show migration toast if job moved to new lane (degen style)
         if (data.newLane === 'trending') {
-          toast.success(`🔥 "${variables.jobTitle || 'Job'}" is now trending!`, {
-            description: `Reached ${data.clickCount} clicks`,
+          toast.success('LFG! Job is pumping', {
+            description: `"${variables.jobTitle || 'Job'}" hit Trending lane`,
           });
         } else if (data.newLane === 'graduated') {
-          toast.success(`🚀 "${variables.jobTitle || 'Job'}" graduated!`, {
-            description: `Reached ${data.clickCount} clicks - now in top tier`,
+          toast.success('Job to the moon!', {
+            description: `"${variables.jobTitle || 'Job'}" graduated - top tier now`,
           });
         } else {
-          toast.success('Click recorded!', {
+          toast.success('Click recorded, fren', {
             description: `${data.clickCount} total clicks`,
           });
         }
@@ -54,8 +54,8 @@ export function useClickTracking() {
       }
     },
     onError: (error) => {
-      toast.error('Failed to record click', {
-        description: error.message || 'Please try again',
+      toast.error('Rekt! Click failed', {
+        description: error.message || 'Try again ser',
       });
     },
   });
