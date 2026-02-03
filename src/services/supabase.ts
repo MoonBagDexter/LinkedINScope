@@ -11,4 +11,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * Supabase client singleton
  * Used for click tracking, job lane management, and real-time updates
  */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: {
+    params: {
+      eventsPerSecond: 2, // Reduce from default 10 for quota safety
+    },
+  },
+});
