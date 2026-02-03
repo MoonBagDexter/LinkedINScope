@@ -4,9 +4,8 @@ import { WalletProviderWrapper } from './contexts/WalletProvider';
 import { Header } from './components/Header';
 import { KanbanBoard } from './components/KanbanBoard';
 
-// Import activity simulator for dev console access
-// Usage: activitySimulator.start(6, 5) - 6 clicks/min, 5 fake degens
-//        activitySimulator.stop()
+// Activity simulator - runs automatically in background
+// Maintains engagement levels: Trending < 5, Graduated < 3
 import './services/activitySimulator';
 
 // Configure QueryClient with aggressive caching to conserve API quota

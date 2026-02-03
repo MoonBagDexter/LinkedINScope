@@ -1,17 +1,24 @@
 import { supabase } from './supabase';
 
 /**
- * Activity Simulator - Creates fake engagement for demo/testing
+ * Activity Simulator - Runs 24/7 in background to maintain engagement
  *
- * Features:
- * - Simulates random job clicks
- * - Adds fake "degens online" to presence
- *
- * Usage: Call startSimulation() to begin, stopSimulation() to end
+ * Constraints:
+ * - Only runs when Trending < 5 jobs and Graduated < 3 jobs
+ * - Won't click jobs that would overflow higher lanes
+ * - Adds fake presence to boost "degens online" count
  */
 
-let clickInterval: NodeJS.Timeout | null = null;
 let presenceChannels: ReturnType<typeof supabase.channel>[] = [];
+let isRunning = false;
+
+// Thresholds
+const TRENDING_THRESHOLD = 5;  // Clicks needed to move new -> trending
+const GRADUATED_THRESHOLD = 20; // Clicks needed to move trending -> graduated
+
+// Lane limits
+const MAX_TRENDING = 5;
+const MAX_GRADUATED = 3;
 
 // Fake degen names for presence
 const FAKE_DEGENS = [
@@ -20,35 +27,26 @@ const FAKE_DEGENS = [
   'paper_hands_pete',
   'diamond_hands_dave',
   'ape_together_strong',
-  'ser_buys_dips',
-  'wagmi_warrior',
-  'ngmi_nancy',
-  'rugged_rick',
-  'moon_boy_mike',
 ];
 
 /**
- * Start simulating activity
- * @param clicksPerMinute - How many random clicks per minute (default: 6)
- * @param fakeDegenCount - How many fake users to show online (default: 5)
+ * Initialize and start the background simulator
+ * Called automatically on app load
  */
-export async function startSimulation(
-  clicksPerMinute: number = 6,
-  fakeDegenCount: number = 5
-): Promise<void> {
-  console.log(`🤖 Starting activity simulation: ${clicksPerMinute} clicks/min, ${fakeDegenCount} fake degens`);
+export async function initSimulator(): Promise<void> {
+  if (isRunning) return;
+  isRunning = true;
 
-  // Add fake presence entries
-  for (let i = 0; i < fakeDegenCount; i++) {
+  // Add fake presence entries (silent)
+  for (let i = 0; i < 3; i++) {
     const channel = supabase.channel(`lobby`, {
-      config: { presence: { key: FAKE_DEGENS[i % FAKE_DEGENS.length] } },
+      config: { presence: { key: `bot_${FAKE_DEGENS[i]}` } },
     });
 
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
         await channel.track({
           online_at: new Date().toISOString(),
-          is_bot: true,
         });
       }
     });
@@ -56,104 +54,137 @@ export async function startSimulation(
     presenceChannels.push(channel);
   }
 
-  // Start random click simulation
-  const intervalMs = (60 * 1000) / clicksPerMinute;
-  clickInterval = setInterval(async () => {
-    await simulateRandomClick();
-  }, intervalMs);
+  // Start click simulation - check every 10 seconds
+  setInterval(async () => {
+    await simulateClickIfNeeded();
+  }, 10000);
 
-  // Do one click immediately
-  await simulateRandomClick();
+  // Initial check after 5 seconds
+  setTimeout(() => simulateClickIfNeeded(), 5000);
 }
 
 /**
- * Stop all simulation activity
+ * Check lane counts and simulate a click if conditions allow
  */
-export async function stopSimulation(): Promise<void> {
-  console.log('🛑 Stopping activity simulation');
-
-  // Stop click interval
-  if (clickInterval) {
-    clearInterval(clickInterval);
-    clickInterval = null;
-  }
-
-  // Remove fake presence
-  for (const channel of presenceChannels) {
-    await channel.untrack();
-    await channel.unsubscribe();
-  }
-  presenceChannels = [];
-}
-
-/**
- * Simulate a random click on a random job
- */
-async function simulateRandomClick(): Promise<void> {
+async function simulateClickIfNeeded(): Promise<void> {
   try {
-    // Get a random job from the 'new' or 'trending' lane
+    // Get current lane counts
     const { data: jobs, error } = await supabase
       .from('jobs')
       .select('job_id, job_title, click_count, lane')
-      .eq('is_active', true)
-      .in('lane', ['new', 'trending'])
-      .limit(20);
+      .eq('is_active', true);
 
-    if (error || !jobs || jobs.length === 0) {
-      console.log('🤖 No jobs to click');
+    if (error || !jobs) return;
+
+    const laneCounts = {
+      new: jobs.filter(j => j.lane === 'new').length,
+      trending: jobs.filter(j => j.lane === 'trending').length,
+      graduated: jobs.filter(j => j.lane === 'graduated').length,
+    };
+
+    // Check if we should run at all
+    if (laneCounts.trending >= MAX_TRENDING && laneCounts.graduated >= MAX_GRADUATED) {
+      // Both lanes at capacity, do nothing
       return;
     }
 
-    // Pick a random job
-    const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
+    // Find a job we can safely click
+    const jobToClick = findSafeJobToClick(jobs, laneCounts);
 
-    // Increment click count directly in database
-    const newClickCount = (randomJob.click_count || 0) + 1;
-
-    // Determine new lane based on thresholds
-    let newLane = randomJob.lane;
-    if (newClickCount >= 20 && randomJob.lane !== 'graduated') {
-      newLane = 'graduated';
-    } else if (newClickCount >= 5 && randomJob.lane === 'new') {
-      newLane = 'trending';
+    if (jobToClick) {
+      await clickJob(jobToClick);
     }
-
-    // Update the job
-    const { error: updateError } = await supabase
-      .from('jobs')
-      .update({ click_count: newClickCount, lane: newLane })
-      .eq('job_id', randomJob.job_id);
-
-    if (updateError) {
-      console.error('🤖 Click failed:', updateError);
-      return;
-    }
-
-    // Broadcast the click to all users
-    const channel = supabase.channel('jobs-updates');
-    const event = newLane !== randomJob.lane ? 'job-migrated' : 'job-clicked';
-
-    channel.send({
-      type: 'broadcast',
-      event,
-      payload: {
-        jobId: randomJob.job_id,
-        jobTitle: randomJob.job_title,
-        newLane: newLane !== randomJob.lane ? newLane : undefined,
-        clickCount: newClickCount,
-      },
-    });
-
-    console.log(`🤖 Bot clicked "${randomJob.job_title}" (${newClickCount} clicks, ${newLane} lane)`);
-  } catch (err) {
-    console.error('🤖 Simulation error:', err);
+  } catch {
+    // Silent fail - don't spam console
   }
 }
 
-// Expose to window for easy console access in dev
-if (typeof window !== 'undefined') {
-  (window as any).activitySimulator = {
-    start: startSimulation,
-    stop: stopSimulation,
-  };
+/**
+ * Find a job that can be clicked without overflowing higher lanes
+ */
+function findSafeJobToClick(
+  jobs: Array<{ job_id: string; job_title: string; click_count: number; lane: string }>,
+  laneCounts: { new: number; trending: number; graduated: number }
+): { job_id: string; job_title: string; click_count: number; lane: string } | null {
+
+  // Priority 1: Click trending jobs if graduated has room
+  if (laneCounts.graduated < MAX_GRADUATED) {
+    const trendingJobs = jobs.filter(j => j.lane === 'trending');
+
+    // Find jobs that WON'T graduate with one more click (safeguard)
+    const safeTrendingJobs = trendingJobs.filter(j =>
+      (j.click_count || 0) + 1 < GRADUATED_THRESHOLD
+    );
+
+    // Or if graduated has room for more, allow jobs near threshold
+    const nearThresholdJobs = laneCounts.graduated < MAX_GRADUATED - 1
+      ? trendingJobs.filter(j => (j.click_count || 0) + 1 >= GRADUATED_THRESHOLD)
+      : [];
+
+    const clickableTrending = [...safeTrendingJobs, ...nearThresholdJobs];
+    if (clickableTrending.length > 0) {
+      return clickableTrending[Math.floor(Math.random() * clickableTrending.length)];
+    }
+  }
+
+  // Priority 2: Click new jobs if trending has room
+  if (laneCounts.trending < MAX_TRENDING) {
+    const newJobs = jobs.filter(j => j.lane === 'new');
+
+    // Find jobs that WON'T move to trending with one more click (safeguard)
+    const safeNewJobs = newJobs.filter(j =>
+      (j.click_count || 0) + 1 < TRENDING_THRESHOLD
+    );
+
+    // Or if trending has room for more, allow jobs near threshold
+    const nearThresholdJobs = laneCounts.trending < MAX_TRENDING - 1
+      ? newJobs.filter(j => (j.click_count || 0) + 1 >= TRENDING_THRESHOLD)
+      : [];
+
+    const clickableNew = [...safeNewJobs, ...nearThresholdJobs];
+    if (clickableNew.length > 0) {
+      return clickableNew[Math.floor(Math.random() * clickableNew.length)];
+    }
+  }
+
+  return null;
 }
+
+/**
+ * Execute a click on a job
+ */
+async function clickJob(job: { job_id: string; job_title: string; click_count: number; lane: string }): Promise<void> {
+  const newClickCount = (job.click_count || 0) + 1;
+
+  // Determine new lane based on thresholds
+  let newLane = job.lane;
+  if (newClickCount >= GRADUATED_THRESHOLD && job.lane === 'trending') {
+    newLane = 'graduated';
+  } else if (newClickCount >= TRENDING_THRESHOLD && job.lane === 'new') {
+    newLane = 'trending';
+  }
+
+  // Update the job in database
+  const { error } = await supabase
+    .from('jobs')
+    .update({ click_count: newClickCount, lane: newLane })
+    .eq('job_id', job.job_id);
+
+  if (error) return;
+
+  // Broadcast to all users
+  const channel = supabase.channel('jobs-updates');
+  channel.send({
+    type: 'broadcast',
+    event: newLane !== job.lane ? 'job-migrated' : 'job-clicked',
+    payload: {
+      jobId: job.job_id,
+      jobTitle: job.job_title,
+      newLane: newLane !== job.lane ? newLane : undefined,
+      clickCount: newClickCount,
+    },
+  });
+}
+
+// Auto-start when module loads
+initSimulator();
