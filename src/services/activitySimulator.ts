@@ -10,6 +10,7 @@ import { supabase } from './supabase';
  */
 
 let isRunning = false;
+let broadcastChannel: ReturnType<typeof supabase.channel> | null = null;
 
 // Thresholds
 const TRENDING_THRESHOLD = 5;  // Clicks needed to move new -> trending
@@ -38,6 +39,10 @@ const FAKE_DEGENS = [
 export async function initSimulator(): Promise<void> {
   if (isRunning) return;
   isRunning = true;
+
+  // Initialize broadcast channel (must subscribe before sending)
+  broadcastChannel = supabase.channel('jobs-updates');
+  broadcastChannel.subscribe();
 
   // Start click simulation - check every 10 seconds
   setInterval(async () => {
@@ -187,18 +192,19 @@ async function clickJob(job: { job_id: string; job_title: string; click_count: n
 
   if (error) return;
 
-  // Broadcast to all users
-  const channel = supabase.channel('jobs-updates');
-  channel.send({
-    type: 'broadcast',
-    event: newLane !== job.lane ? 'job-migrated' : 'job-clicked',
-    payload: {
-      jobId: job.job_id,
-      jobTitle: job.job_title,
-      newLane: newLane !== job.lane ? newLane : undefined,
-      clickCount: newClickCount,
-    },
-  });
+  // Broadcast to all users via the subscribed channel
+  if (broadcastChannel) {
+    broadcastChannel.send({
+      type: 'broadcast',
+      event: newLane !== job.lane ? 'job-migrated' : 'job-clicked',
+      payload: {
+        jobId: job.job_id,
+        jobTitle: job.job_title,
+        newLane: newLane !== job.lane ? newLane : undefined,
+        clickCount: newClickCount,
+      },
+    });
+  }
 }
 
 // Auto-start when module loads
