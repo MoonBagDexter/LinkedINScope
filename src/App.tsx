@@ -35,11 +35,11 @@ function App() {
             <KanbanBoard />
           </main>
 
-          {/* Toast notifications - degen style with max 3 visible */}
+          {/* Toast notifications - degen style, top center, quick popup */}
           <Toaster
-            position="top-right"
+            position="top-center"
             toastOptions={{
-              duration: 4000,
+              duration: 2000,
             }}
             visibleToasts={3}
             richColors

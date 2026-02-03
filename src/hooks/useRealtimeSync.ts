@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase';
 
 /**
  * Hook for real-time job update subscriptions
- * Listens for job-migrated events and invalidates React Query cache
+ * Listens for job-clicked and job-migrated events and updates cache directly
  *
  * @param onMigration - Optional callback for handling migration events (e.g., showing toasts)
  */
@@ -12,18 +12,30 @@ export function useRealtimeSync(onMigration?: (payload: any) => void): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // Handler for all job update events
+    const handleJobUpdate = (payload: any) => {
+      const { jobId, clickCount, newLane } = payload.payload || {};
+
+      // Update cache directly for instant UI update
+      queryClient.setQueryData(['cached-jobs'], (oldData: any[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map((job: any) =>
+          job.job_id === jobId
+            ? { ...job, click_count: clickCount, lane: newLane || job.lane }
+            : job
+        );
+      });
+
+      // Call migration callback for migration events
+      if (newLane && onMigration) {
+        onMigration(payload);
+      }
+    };
+
     const channel = supabase
       .channel('jobs-updates')
-      .on('broadcast', { event: 'job-migrated' }, (payload) => {
-        // Invalidate cached jobs to trigger refetch
-        queryClient.invalidateQueries({
-          queryKey: ['cached-jobs'],
-          refetchType: 'active', // Only refetch if query is currently active
-        });
-
-        // Call optional migration callback if provided
-        onMigration?.(payload);
-      })
+      .on('broadcast', { event: 'job-clicked' }, handleJobUpdate)
+      .on('broadcast', { event: 'job-migrated' }, handleJobUpdate)
       .subscribe();
 
     return () => {

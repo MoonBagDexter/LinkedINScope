@@ -49,23 +49,30 @@ export function useClickTracking() {
           });
         }
 
-        // Broadcast migration events to all users via realtime
-        if (data.newLane === 'trending' || data.newLane === 'graduated') {
-          const channel = supabase.channel('jobs-updates');
-          channel.send({
-            type: 'broadcast',
-            event: 'job-migrated',
-            payload: {
-              jobId: variables.jobId,
-              jobTitle: variables.jobTitle,
-              newLane: data.newLane,
-              clickCount: data.clickCount,
-            },
-          });
-        }
+        // Broadcast click event to all users via realtime (live updates)
+        const channel = supabase.channel('jobs-updates');
+        channel.send({
+          type: 'broadcast',
+          event: data.newLane ? 'job-migrated' : 'job-clicked',
+          payload: {
+            jobId: variables.jobId,
+            jobTitle: variables.jobTitle,
+            newLane: data.newLane,
+            clickCount: data.clickCount,
+          },
+        });
 
-        // Invalidate relevant queries to refresh UI
-        queryClient.invalidateQueries({ queryKey: ['lane-jobs'] });
+        // Update cache directly with new click count (don't wait for refetch)
+        queryClient.setQueryData(['cached-jobs'], (oldData: any[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map((job: any) =>
+            job.job_id === variables.jobId
+              ? { ...job, click_count: data.clickCount, lane: data.newLane || job.lane }
+              : job
+          );
+        });
+
+        // Invalidate user clicks cache
         queryClient.invalidateQueries({ queryKey: ['user-clicks', variables.walletAddress] });
       }
     },
