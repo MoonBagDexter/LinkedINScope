@@ -6,10 +6,9 @@ import { supabase } from './supabase';
  * Constraints:
  * - Only runs when Trending < 5 jobs and Graduated < 3 jobs
  * - Won't click jobs that would overflow higher lanes
- * - Adds fake presence to boost "degens online" count
+ * - Fake degens appear temporarily around clicks, then leave
  */
 
-let presenceChannels: ReturnType<typeof supabase.channel>[] = [];
 let isRunning = false;
 
 // Thresholds
@@ -27,6 +26,9 @@ const FAKE_DEGENS = [
   'paper_hands_pete',
   'diamond_hands_dave',
   'ape_together_strong',
+  'wagmi_warrior',
+  'moon_boy_mike',
+  'ser_buys_dips',
 ];
 
 /**
@@ -37,23 +39,6 @@ export async function initSimulator(): Promise<void> {
   if (isRunning) return;
   isRunning = true;
 
-  // Add fake presence entries (silent)
-  for (let i = 0; i < 3; i++) {
-    const channel = supabase.channel(`lobby`, {
-      config: { presence: { key: `bot_${FAKE_DEGENS[i]}` } },
-    });
-
-    channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({
-          online_at: new Date().toISOString(),
-        });
-      }
-    });
-
-    presenceChannels.push(channel);
-  }
-
   // Start click simulation - check every 10 seconds
   setInterval(async () => {
     await simulateClickIfNeeded();
@@ -61,6 +46,32 @@ export async function initSimulator(): Promise<void> {
 
   // Initial check after 5 seconds
   setTimeout(() => simulateClickIfNeeded(), 5000);
+}
+
+/**
+ * Add a temporary fake degen to presence, then remove after delay
+ */
+async function addTemporaryDegen(durationMs: number = 15000): Promise<void> {
+  const degenName = FAKE_DEGENS[Math.floor(Math.random() * FAKE_DEGENS.length)];
+  const uniqueKey = `bot_${degenName}_${Date.now()}`;
+
+  const channel = supabase.channel('lobby', {
+    config: { presence: { key: uniqueKey } },
+  });
+
+  channel.subscribe(async (status) => {
+    if (status === 'SUBSCRIBED') {
+      await channel.track({
+        online_at: new Date().toISOString(),
+      });
+
+      // Remove after duration
+      setTimeout(async () => {
+        await channel.untrack();
+        await channel.unsubscribe();
+      }, durationMs);
+    }
+  });
 }
 
 /**
@@ -84,7 +95,6 @@ async function simulateClickIfNeeded(): Promise<void> {
 
     // Check if we should run at all
     if (laneCounts.trending >= MAX_TRENDING && laneCounts.graduated >= MAX_GRADUATED) {
-      // Both lanes at capacity, do nothing
       return;
     }
 
@@ -92,10 +102,15 @@ async function simulateClickIfNeeded(): Promise<void> {
     const jobToClick = findSafeJobToClick(jobs, laneCounts);
 
     if (jobToClick) {
+      // Add temporary degen presence (stays 10-30 seconds)
+      const duration = 10000 + Math.random() * 20000;
+      addTemporaryDegen(duration);
+
+      // Click the job
       await clickJob(jobToClick);
     }
   } catch {
-    // Silent fail - don't spam console
+    // Silent fail
   }
 }
 
