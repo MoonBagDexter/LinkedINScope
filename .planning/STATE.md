@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 ## Current Position
 
-Phase: 2.5 of 3 (Backend Job Caching) - IN PROGRESS
-Plan: 1 of 2 in current phase
-Status: Plan 02.5-01 complete
-Last activity: 2026-02-02 - Completed 02.5-01-PLAN.md (Backend Job Caching Artifacts)
+Phase: 2.5 of 3 (Backend Job Caching) - COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase 02.5 complete
+Last activity: 2026-02-03 - Completed 02.5-02-PLAN.md (Backend Job Caching Deployment)
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 13min
-- Total execution time: 65min
+- Total plans completed: 6
+- Average duration: 18min
+- Total execution time: 110min
 
 **By Phase:**
 
@@ -29,11 +29,11 @@ Progress: [████████░░] 83%
 |-------|-------|-------|----------|
 | 01-foundation-auth | 2 | 37min | 18.5min |
 | 02-engagement-core | 2 | 23min | 11.5min |
-| 02.5-backend-job-caching | 1 | 5min | 5min |
+| 02.5-backend-job-caching | 2 | 50min | 25min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (25min), 02-01 (5min), 02-02 (18min), 02.5-01 (5min)
-- Trend: Improving - Recent plans completing faster as architecture stabilizes
+- Last 5 plans: 02-01 (5min), 02-02 (18min), 02.5-01 (5min), 02.5-02 (45min)
+- Trend: Plan 02.5-02 longer due to manual deployment steps, but phase delivered major performance improvement
 
 *Updated after each plan completion*
 
@@ -65,6 +65,10 @@ Recent decisions affecting current work:
 - [02.5-01]: Upsert preserves click_count and lane (not included in payload)
 - [02.5-01]: Retry logic: 3 attempts, exponential backoff with 30% jitter
 - [02.5-01]: Mark existing jobs inactive before sync, reactivate during upsert
+- [02.5-02]: Manual Dashboard deployment over CLI (auth complexity in non-TTY)
+- [02.5-02]: 5-minute staleTime for cached jobs (backend refreshes daily)
+- [02.5-02]: Deprecated but kept useJobs and jsearch.ts for reference
+- [02.5-02]: pg_cron daily schedule at 6 AM UTC (30 API requests/month)
 
 ### Roadmap Evolution
 
@@ -92,10 +96,11 @@ None.
 - Should monitor in production as user base grows
 
 **Performance - JSearch API Per-User Calls (Phase 2):**
-- Current: JSearch API called per-user session causes slow initial load
+- Original issue: JSearch API called per-user session caused slow initial load
 - User feedback: "Loading jobs is slow"
-- BEING ADDRESSED: Phase 2.5 adds backend caching (server fetches, users read from cache)
-- Status: Plan 02.5-01 complete (artifacts), Plan 02.5-02 pending (deployment)
+- RESOLVED: Phase 2.5 complete - Backend caching implemented
+- Status: Edge Function deployed, pg_cron scheduled, frontend refactored
+- Result: Page load <2 seconds, no JSearch API calls from frontend
 
 **Realtime Message Limits (Phase 3):**
 - Supabase free tier has message quotas
@@ -104,8 +109,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-02
-Stopped at: Completed 02.5-01-PLAN.md (Backend Job Caching Artifacts)
+Last session: 2026-02-03
+Stopped at: Completed 02.5-02-PLAN.md (Backend Job Caching Deployment) - Phase 2.5 COMPLETE
 Resume file: None
 
 ## Phase Completion Summaries
@@ -162,7 +167,7 @@ Key artifacts:
 
 Performance note: User identified JSearch API per-user calls as slow. V1 TODO: backend caching.
 
-### Phase 2.5: Backend Job Caching - IN PROGRESS (1/2 plans complete)
+### Phase 2.5: Backend Job Caching - COMPLETE (2/2 plans complete)
 
 **Plan 02.5-01 Complete - Backend Job Caching Artifacts:**
 
@@ -176,4 +181,19 @@ Key artifacts:
 - `supabase/migrations/20260202_add_job_caching.sql` - Schema migration with idempotency
 - `supabase/functions/job-sync/index.ts` - Deno Edge Function for daily sync
 
-**Next:** Plan 02.5-02 (Backend Deployment) - Deploy migration and Edge Function to Supabase
+**Plan 02.5-02 Complete - Backend Job Caching Deployment:**
+
+Delivered:
+- Edge Function deployed and tested (10 jobs synced successfully)
+- Frontend refactored to query Supabase cache (single query, 5-min staleTime)
+- pg_cron scheduled for daily 6 AM UTC refresh (30 API requests/month)
+- Page load performance improved to <2 seconds
+- No JSearch API calls from frontend (quota preserved)
+
+Key artifacts:
+- `supabase/migrations/20260202_setup_job_sync_cron.sql` - pg_cron automation setup
+- `src/hooks/useLaneJobs.ts` - Refactored to query Supabase directly
+- `src/hooks/useJobs.ts` - Deprecated (kept for reference)
+- `src/services/jsearch.ts` - Deprecated (kept for reference)
+
+**Phase 2.5 Impact:** Major performance improvement - eliminated per-user JSearch API calls, achieved <2 sec page load target, preserved 94% of API quota for future features.
