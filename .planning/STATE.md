@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-02)
 
 **Core value:** Jobs surface based on real engagement, not algorithms
-**Current focus:** Phase 2.5 complete - Ready for Phase 3
+**Current focus:** Phase 3 in progress - Real-Time & Polish
 
 ## Current Position
 
-Phase: 2.5 of 3 (Backend Job Caching) - COMPLETE
-Plan: 2 of 2 in current phase
-Status: Phase 02.5 complete
-Last activity: 2026-02-03 - Completed 02.5-02-PLAN.md (Backend Job Caching Deployment)
+Phase: 3 of 3 (Real-Time & Polish)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-03 - Completed 03-01-PLAN.md (Real-Time Infrastructure Setup)
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 18min
-- Total execution time: 110min
+- Total plans completed: 7
+- Average duration: 16min
+- Total execution time: 113min
 
 **By Phase:**
 
@@ -30,10 +30,11 @@ Progress: [█████████░] 91%
 | 01-foundation-auth | 2 | 37min | 18.5min |
 | 02-engagement-core | 2 | 23min | 11.5min |
 | 02.5-backend-job-caching | 2 | 50min | 25min |
+| 03-real-time-polish | 1 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (5min), 02-02 (18min), 02.5-01 (5min), 02.5-02 (45min)
-- Trend: Plan 02.5-02 longer due to manual deployment steps, but phase delivered major performance improvement
+- Last 5 plans: 02-02 (18min), 02.5-01 (5min), 02.5-02 (45min), 03-01 (3min)
+- Trend: Plan 03-01 quick execution - straightforward hook creation and configuration
 
 *Updated after each plan completion*
 
@@ -53,7 +54,7 @@ Recent decisions affecting current work:
 - [01-02]: Salary display only when API provides data
 - [01-02]: Quick Apply as compact square button on right
 - [01-02]: Node.js polyfills for Solana wallet adapter browser compatibility
-- [02-01]: Threshold values: 5 clicks → trending, 20 clicks → graduated
+- [02-01]: Threshold values: 5 clicks -> trending, 20 clicks -> graduated
 - [02-01]: Anti-gaming via database unique constraint on (wallet_address, job_id)
 - [02-01]: Click recorded when Quick Apply button clicked (not on view)
 - [02-01]: Sonner library for toast notifications
@@ -69,6 +70,9 @@ Recent decisions affecting current work:
 - [02.5-02]: 5-minute staleTime for cached jobs (backend refreshes daily)
 - [02.5-02]: Deprecated but kept useJobs and jsearch.ts for reference
 - [02.5-02]: pg_cron daily schedule at 6 AM UTC (30 API requests/month)
+- [03-01]: eventsPerSecond 2 for conservative Supabase quota safety
+- [03-01]: Anonymous presence tracking (no wallet in payload)
+- [03-01]: refetchType active for query invalidation (avoid refetching inactive queries)
 
 ### Roadmap Evolution
 
@@ -106,11 +110,12 @@ None.
 - Supabase free tier has message quotas
 - Research shows potential for 1000%+ overage with naive real-time
 - Must use batched updates and table-level subscriptions
+- ADDRESSED: eventsPerSecond set to 2 (vs default 10), table-level subscriptions in place
 
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 02.5-02-PLAN.md (Backend Job Caching Deployment) - Phase 2.5 COMPLETE
+Stopped at: Completed 03-01-PLAN.md (Real-Time Infrastructure Setup)
 Resume file: None
 
 ## Phase Completion Summaries
@@ -137,7 +142,7 @@ Key artifacts:
 Delivered:
 - Supabase client with environment variable validation
 - Click tracking service with anti-gaming enforcement
-- Lane migration logic (5→trending, 20→graduated)
+- Lane migration logic (5->trending, 20->graduated)
 - User click history hooks with React Query caching
 - "Already applied" badges on JobCard
 
@@ -197,3 +202,22 @@ Key artifacts:
 - `src/services/jsearch.ts` - Deprecated (kept for reference)
 
 **Phase 2.5 Impact:** Major performance improvement - eliminated per-user JSearch API calls, achieved <2 sec page load target, preserved 94% of API quota for future features.
+
+### Phase 3: Real-Time & Polish - IN PROGRESS (1/3 plans complete)
+
+**Plan 03-01 Complete - Real-Time Infrastructure Setup:**
+
+Delivered:
+- Supabase client configured with eventsPerSecond: 2 throttling
+- usePresence hook for live user count tracking via Presence API
+- useRealtimeSync hook for job update broadcast subscriptions
+- Header displays "X degens online" with live user count
+- All hooks properly clean up subscriptions on unmount
+
+Key artifacts:
+- `src/services/supabase.ts` - Added realtime throttling config
+- `src/hooks/usePresence.ts` - Presence API user counting
+- `src/hooks/useRealtimeSync.ts` - Broadcast subscription hook
+- `src/components/Header.tsx` - Live user count display
+
+**Next:** 03-02 (Card Animations) - Slide animations for lane migrations
