@@ -4,6 +4,11 @@ import { WalletProviderWrapper } from './contexts/WalletProvider';
 import { Header } from './components/Header';
 import { KanbanBoard } from './components/KanbanBoard';
 
+// Import activity simulator for dev console access
+// Usage: activitySimulator.start(6, 5) - 6 clicks/min, 5 fake degens
+//        activitySimulator.stop()
+import './services/activitySimulator';
+
 // Configure QueryClient with aggressive caching to conserve API quota
 // JSearch free tier = 500 requests/month, so we cache heavily
 const queryClient = new QueryClient({
