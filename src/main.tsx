@@ -1,6 +1,5 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Toaster } from 'sonner'
 
 // Polyfill Buffer for Solana wallet adapter
 import { Buffer } from 'buffer'
@@ -13,7 +12,6 @@ import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Toaster position="top-right" theme="dark" />
     <App />
   </StrictMode>,
 )
