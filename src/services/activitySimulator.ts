@@ -10,6 +10,7 @@ import { supabase } from './supabase';
  */
 
 let isRunning = false;
+let isPaused = true; // Start paused by default
 let broadcastChannel: ReturnType<typeof supabase.channel> | null = null;
 
 // Thresholds
@@ -48,16 +49,24 @@ export async function initSimulator(): Promise<void> {
   const scheduleNextClick = () => {
     const delay = 45000 + Math.random() * 45000; // 45-90 seconds
     setTimeout(async () => {
-      await simulateClickIfNeeded();
+      if (!isPaused) await simulateClickIfNeeded();
       scheduleNextClick();
     }, delay);
   };
 
   // Initial check after 30 seconds
   setTimeout(() => {
-    simulateClickIfNeeded();
+    if (!isPaused) simulateClickIfNeeded();
     scheduleNextClick();
   }, 30000);
+}
+
+export function setSimulatorPaused(paused: boolean): void {
+  isPaused = paused;
+}
+
+export function isSimulatorPaused(): boolean {
+  return isPaused;
 }
 
 /**
