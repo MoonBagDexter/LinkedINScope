@@ -16,6 +16,7 @@ interface KanbanLaneProps {
 /**
  * Individual Kanban lane displaying jobs
  * Renders job cards with progress bars (except graduated lane)
+ * New jobs slide in with animation as they appear from server-driven drip
  */
 export function KanbanLane({
   lane,
@@ -25,22 +26,23 @@ export function KanbanLane({
   clickedJobIds,
   onApplyClick,
 }: KanbanLaneProps) {
-  // Track which jobs are animating (recently migrated to this lane)
   const [animatingIds, setAnimatingIds] = useState<Set<string>>(new Set());
-  const prevJobIds = useRef<Set<string>>(new Set());
+  const knownIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const currentIds = new Set(jobs.map(j => j.job_id));
-    const newIds = [...currentIds].filter(id => !prevJobIds.current.has(id));
+    const newIds = jobs
+      .map(j => j.job_id)
+      .filter(id => !knownIds.current.has(id));
 
-    if (newIds.length > 0) {
+    // Update known set
+    knownIds.current = new Set(jobs.map(j => j.job_id));
+
+    if (newIds.length > 0 && knownIds.current.size > newIds.length) {
+      // Only animate if these are additions (not initial load)
       setAnimatingIds(new Set(newIds));
-      // Clear animation state after animation completes (300ms to allow 250ms animation + buffer)
       const timer = setTimeout(() => setAnimatingIds(new Set()), 300);
       return () => clearTimeout(timer);
     }
-
-    prevJobIds.current = currentIds;
   }, [jobs]);
 
   return (

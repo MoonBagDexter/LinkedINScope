@@ -27,6 +27,7 @@ export function useLaneJobs() {
         .from('jobs')
         .select('*')
         .eq('is_active', true)
+        .lte('created_at', new Date().toISOString())
         .order('last_seen', { ascending: false });
 
       if (error) throw error;
@@ -51,7 +52,8 @@ export function useLaneJobs() {
         created_at: row.created_at,
       }));
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes - backend refreshes daily, no need to poll frequently
+    staleTime: 1000 * 30, // 30 seconds - jobs drip in with future timestamps
+    refetchInterval: 1000 * 30, // Poll every 30s to reveal newly visible jobs
   });
 
   // Group jobs by lane

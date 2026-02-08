@@ -140,7 +140,40 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to deactivate jobs: ${deactivateError.message}`);
     }
 
-    // Upsert jobs (insert new, update existing)
+    // Identify which jobs are new vs returning, preserving existing created_at
+    console.log('[job-sync] Checking for new vs existing jobs...');
+    const { data: existingRows } = await supabase
+      .from('jobs')
+      .select('job_id, created_at')
+      .in('job_id', jobs.map(j => j.job_id));
+    const existingMap = new Map(
+      (existingRows || []).map(r => [r.job_id, r.created_at])
+    );
+
+    // Build staggered drip times for new jobs
+    const newJobs = jobs.filter(j => !existingMap.has(j.job_id));
+    const shuffledNewIds = new Set(
+      [...newJobs].sort(() => Math.random() - 0.5).map(j => j.job_id)
+    );
+    const now = Date.now();
+    const DRIP_WINDOW_MS = 55 * 60 * 1000;
+    let dripIndex = 0;
+    const dripTimes = new Map<string, string>();
+    for (const id of shuffledNewIds) {
+      const offset = shuffledNewIds.size === 1
+        ? 0
+        : Math.round((dripIndex / (shuffledNewIds.size - 1)) * DRIP_WINDOW_MS);
+      dripTimes.set(id, new Date(now + offset).toISOString());
+      dripIndex++;
+    }
+
+    if (newJobs.length > 0) {
+      console.log(`[job-sync] ${newJobs.length} new jobs will drip in over 55 minutes`);
+    }
+
+    // Upsert jobs in one atomic operation
+    // - Existing jobs: preserve their created_at
+    // - New jobs: set created_at to staggered future times for drip effect
     // CRITICAL: Do NOT include click_count or lane - preserve existing values
     console.log('[job-sync] Upserting jobs to database...');
     const jobsToUpsert = jobs.map((job) => ({
@@ -159,13 +192,14 @@ Deno.serve(async (req) => {
       job_description: job.job_description || null,
       is_active: true,
       last_seen: new Date().toISOString(),
+      created_at: existingMap.get(job.job_id) ?? dripTimes.get(job.job_id) ?? new Date().toISOString(),
     }));
 
     const { error: upsertError } = await supabase
       .from('jobs')
       .upsert(jobsToUpsert, {
         onConflict: 'job_id',
-        ignoreDuplicates: false, // Update existing records
+        ignoreDuplicates: false,
       });
 
     if (upsertError) {

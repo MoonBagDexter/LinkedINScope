@@ -1,8 +1,9 @@
+import { useState, useEffect } from 'react';
 import type { Lane } from '../types/kanban';
 import type { JobWithClickCount } from '../hooks/useLaneJobs';
 
 function timeAgo(dateString: string): string {
-  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(dateString).getTime()) / 1000));
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -10,6 +11,34 @@ function timeAgo(dateString: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
+}
+
+function useTimeAgo(dateString: string | undefined): string {
+  const [display, setDisplay] = useState(() => dateString ? timeAgo(dateString) : '');
+
+  useEffect(() => {
+    if (!dateString) return;
+    setDisplay(timeAgo(dateString));
+
+    // Tick every second for the first minute, then every 30s
+    const tick = () => {
+      const age = Date.now() - new Date(dateString).getTime();
+      return age < 60_000 ? 1_000 : 30_000;
+    };
+
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      timer = setTimeout(() => {
+        setDisplay(timeAgo(dateString));
+        schedule();
+      }, tick());
+    };
+    schedule();
+
+    return () => clearTimeout(timer);
+  }, [dateString]);
+
+  return display;
 }
 
 interface JobCardProps {
@@ -28,6 +57,7 @@ interface JobCardProps {
  * Styled with degen aesthetic - black bg, purple border, gradient button
  */
 export function JobCard({ job, onApplyClick, hasClicked = false, isAnimating = false }: JobCardProps) {
+  const postedAgo = useTimeAgo(job.created_at);
   // Format location, handling missing values gracefully
   const formatLocation = () => {
     const parts = [job.job_city, job.job_state].filter(Boolean);
@@ -97,10 +127,10 @@ export function JobCard({ job, onApplyClick, hasClicked = false, isAnimating = f
             )}
           </div>
 
-          {/* Posted time */}
-          {job.created_at && (
+          {/* Posted time - updates live */}
+          {postedAgo && (
             <p className="text-gray-500 text-xs mt-2">
-              Posted {timeAgo(job.created_at)}
+              Posted {postedAgo}
             </p>
           )}
         </div>
