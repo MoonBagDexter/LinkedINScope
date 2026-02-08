@@ -8,20 +8,15 @@ import { KanbanBoard } from './components/KanbanBoard';
 // Maintains engagement levels: Trending < 5, Graduated < 3
 import './services/activitySimulator';
 
-// Configure QueryClient with aggressive caching to conserve API quota
-// JSearch free tier = 500 requests/month, so we cache heavily
+// Configure QueryClient
+// Frontend queries Supabase (not JSearch directly), so no API quota concern here.
+// Real-time updates and polling keep the board fresh.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Data considered fresh for 24 hours
-      staleTime: 1000 * 60 * 60 * 24,
-      // Keep cached data for 48 hours
-      gcTime: 1000 * 60 * 60 * 48,
-      // Don't refetch on window focus (preserves quota)
-      refetchOnWindowFocus: false,
-      // Don't refetch on mount if data exists (preserves quota)
-      refetchOnMount: false,
-      // Only retry failed requests once
+      staleTime: 1000 * 30, // 30s — matches polling interval for drip feed
+      gcTime: 1000 * 60 * 60, // 1 hour
+      refetchOnWindowFocus: true, // Catch up when user returns to tab
       retry: 1,
     },
   },
