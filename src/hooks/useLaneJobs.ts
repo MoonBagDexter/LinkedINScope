@@ -7,6 +7,7 @@ import type { Lane } from '../types/kanban';
 export interface JobWithClickCount extends Job {
   click_count: number;
   lane: Lane;
+  created_at: string;
 }
 
 /**
@@ -47,6 +48,7 @@ export function useLaneJobs() {
         job_salary_period: row.job_salary_period,
         click_count: row.click_count ?? 0,
         lane: (row.lane as Lane) ?? 'new',
+        created_at: row.created_at,
       }));
     },
     staleTime: 1000 * 60 * 5, // 5 minutes - backend refreshes daily, no need to poll frequently

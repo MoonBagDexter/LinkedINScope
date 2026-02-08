@@ -1,5 +1,6 @@
 import { useJobs } from '../hooks/useJobs';
 import { JobCard } from './JobCard';
+import type { JobWithClickCount } from '../hooks/useLaneJobs';
 
 /**
  * Job listing container component
@@ -81,7 +82,7 @@ export function JobList() {
       {jobs.map((job) => (
         <JobCard
           key={job.job_id}
-          job={job}
+          job={job as unknown as JobWithClickCount}
           onApplyClick={handleApplyClick}
         />
       ))}
