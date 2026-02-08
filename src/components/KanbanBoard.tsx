@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLaneJobs } from '../hooks/useLaneJobs';
-import { useUserClicks } from '../hooks/useUserClicks';
-import { useClickTracking } from '../hooks/useClickTracking';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { KanbanLane } from './KanbanLane';
 import { MobileTabNav } from './MobileTabNav';
@@ -15,11 +12,9 @@ import type { Lane } from '../types/kanban';
  * Mobile: Tabs to switch between lanes
  */
 export function KanbanBoard() {
-  const { publicKey } = useWallet();
-  const walletAddress = publicKey?.toBase58();
   const queryClient = useQueryClient();
 
-  // Enable real-time sync - invalidates cache when other users cause migrations
+  // Enable real-time sync - invalidates cache when new jobs are inserted
   useRealtimeSync();
 
   // Reconnect handling - refetch when coming back online
@@ -35,27 +30,11 @@ export function KanbanBoard() {
   // Fetch jobs organized by lane
   const { jobsByLane, isLoading, error } = useLaneJobs();
 
-  // Fetch user's clicked jobs
-  const { clickedJobIds } = useUserClicks(walletAddress);
-
-  // Click tracking mutation
-  const { trackClick, isTracking } = useClickTracking();
-
   // Mobile lane state
   const [activeMobileLane, setActiveMobileLane] = useState<Lane>('new');
 
-  // Handle apply click
-  const handleApplyClick = (jobId: string, applyLink: string, jobTitle: string) => {
-    // Track click if wallet connected
-    if (walletAddress) {
-      trackClick({
-        jobId,
-        walletAddress,
-        jobTitle,
-      });
-    }
-
-    // Open external job link
+  // Handle apply click — just opens the link, no tracking for now
+  const handleApplyClick = (_jobId: string, applyLink: string) => {
     window.open(applyLink, '_blank', 'noopener,noreferrer');
   };
 
@@ -99,7 +78,6 @@ export function KanbanBoard() {
           <div
             key={lane}
             className={`${
-              // On mobile, only show active lane
               lane === activeMobileLane ? 'block' : 'hidden'
             } md:block`}
           >
@@ -107,25 +85,11 @@ export function KanbanBoard() {
               lane={lane}
               jobs={jobsByLane[lane]}
               title={title}
-              walletAddress={walletAddress}
-              clickedJobIds={clickedJobIds}
               onApplyClick={handleApplyClick}
             />
           </div>
         ))}
       </div>
-
-      {/* Loading overlay when tracking click */}
-      {isTracking && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-purple-500/50 rounded-lg px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-purple-500"></div>
-              <p className="text-white">Recording click...</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

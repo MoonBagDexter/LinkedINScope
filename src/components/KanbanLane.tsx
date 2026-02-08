@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { JobCard } from './JobCard';
-import { ProgressBar } from './ProgressBar';
 import type { Lane } from '../types/kanban';
 import type { JobWithClickCount } from '../hooks/useLaneJobs';
 
@@ -8,22 +7,16 @@ interface KanbanLaneProps {
   lane: Lane;
   jobs: JobWithClickCount[];
   title: string;
-  walletAddress?: string;
-  clickedJobIds?: Set<string>;
-  onApplyClick: (jobId: string, applyLink: string, jobTitle: string) => void;
+  onApplyClick: (jobId: string, applyLink: string) => void;
 }
 
 /**
  * Individual Kanban lane displaying jobs
- * Renders job cards with progress bars (except graduated lane)
  * New jobs slide in with animation as they appear from server-driven drip
  */
 export function KanbanLane({
-  lane,
   jobs,
   title,
-  walletAddress,
-  clickedJobIds,
   onApplyClick,
 }: KanbanLaneProps) {
   const [animatingIds, setAnimatingIds] = useState<Set<string>>(new Set());
@@ -60,17 +53,12 @@ export function KanbanLane({
           </div>
         ) : (
           jobs.map((job) => (
-            <div key={job.job_id}>
-              <JobCard
-                job={job}
-                onApplyClick={(jobId, applyLink) => onApplyClick(jobId, applyLink, job.job_title)}
-                walletAddress={walletAddress}
-                hasClicked={clickedJobIds?.has(job.job_id)}
-                isAnimating={animatingIds.has(job.job_id)}
-              />
-              {/* Progress bar below each card (except graduated) */}
-              <ProgressBar current={job.click_count} lane={lane} />
-            </div>
+            <JobCard
+              key={job.job_id}
+              job={job}
+              onApplyClick={(jobId, applyLink) => onApplyClick(jobId, applyLink)}
+              isAnimating={animatingIds.has(job.job_id)}
+            />
           ))
         )}
       </div>

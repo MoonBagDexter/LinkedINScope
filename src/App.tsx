@@ -4,10 +4,6 @@ import { WalletProviderWrapper } from './contexts/WalletProvider';
 import { Header } from './components/Header';
 import { KanbanBoard } from './components/KanbanBoard';
 
-// Activity simulator - runs automatically in background
-// Maintains engagement levels: Trending < 5, Graduated < 3
-import './services/activitySimulator';
-
 // Configure QueryClient
 // Frontend queries Supabase (not JSearch directly), so no API quota concern here.
 // Real-time updates and polling keep the board fresh.
@@ -34,7 +30,7 @@ function App() {
             <KanbanBoard />
           </main>
 
-          {/* Toast notifications - degen style, top center, quick popup */}
+          {/* Toast notifications */}
           <Toaster
             position="top-center"
             toastOptions={{
