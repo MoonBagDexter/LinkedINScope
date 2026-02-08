@@ -12,11 +12,7 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo */}
         <div className="flex flex-col">
-          <h1 className="text-2xl font-bold flex items-center gap-0">
-            <span className="text-primary italic">Linked</span>
-            <span className="bg-primary text-white px-1.5 py-0.5 rounded text-sm font-bold mx-0.5">in</span>
-            <span className="text-primary">Scope</span>
-          </h1>
+          <img src="/logo.png" alt="LinkedInScope" className="h-8" />
           {/* Resume & Presets placeholder */}
           <div className="flex items-center gap-2 mt-1">
             <select className="text-xs bg-cream-dark border border-cream-border rounded px-2 py-0.5 text-text-secondary" disabled>
