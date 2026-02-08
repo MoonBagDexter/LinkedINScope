@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
     console.log('[job-sync] Fetching jobs from JSearch API...');
     const jsearchUrl = new URL('https://jsearch.p.rapidapi.com/search');
     jsearchUrl.searchParams.set('query', 'fast food crew member USA');
-    jsearchUrl.searchParams.set('num_pages', '1');
+    jsearchUrl.searchParams.set('num_pages', '10');
 
     const response = await fetchWithRetry(jsearchUrl.toString(), {
       method: 'GET',
@@ -127,18 +127,6 @@ Deno.serve(async (req) => {
     const jobs = jsearchData.data || [];
 
     console.log(`[job-sync] Received ${jobs.length} jobs from JSearch API`);
-
-    // Mark all existing active jobs as inactive (will be reactivated if still in API)
-    console.log('[job-sync] Marking existing active jobs as inactive...');
-    const { error: deactivateError } = await supabase
-      .from('jobs')
-      .update({ is_active: false })
-      .eq('is_active', true);
-
-    if (deactivateError) {
-      console.error('[job-sync] Error deactivating jobs:', deactivateError);
-      throw new Error(`Failed to deactivate jobs: ${deactivateError.message}`);
-    }
 
     // Identify which jobs are new vs returning, preserving existing created_at
     console.log('[job-sync] Checking for new vs existing jobs...');
