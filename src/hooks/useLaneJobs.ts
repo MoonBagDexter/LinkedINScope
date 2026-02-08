@@ -69,6 +69,11 @@ export function useLaneJobs() {
       result[lane].push(job);
     }
 
+    // Sort each lane by newest first
+    for (const lane of Object.keys(result) as Lane[]) {
+      result[lane].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
     return result;
   }, [jobs]);
 
