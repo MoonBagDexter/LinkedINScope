@@ -22,7 +22,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <WalletProviderWrapper>
-        <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen bg-cream text-text-primary">
           <Header />
 
           {/* Main content area */}

@@ -10,11 +10,8 @@ interface KanbanLaneProps {
   onApplyClick: (jobId: string, applyLink: string) => void;
 }
 
-/**
- * Individual Kanban lane displaying jobs
- * New jobs slide in with animation as they appear from server-driven drip
- */
 export function KanbanLane({
+  lane,
   jobs,
   title,
   onApplyClick,
@@ -27,11 +24,9 @@ export function KanbanLane({
       .map(j => j.job_id)
       .filter(id => !knownIds.current.has(id));
 
-    // Update known set
     knownIds.current = new Set(jobs.map(j => j.job_id));
 
     if (newIds.length > 0 && knownIds.current.size > newIds.length) {
-      // Only animate if these are additions (not initial load)
       setAnimatingIds(new Set(newIds));
       const timer = setTimeout(() => setAnimatingIds(new Set()), 300);
       return () => clearTimeout(timer);
@@ -41,14 +36,19 @@ export function KanbanLane({
   return (
     <div className="flex flex-col">
       {/* Lane header */}
-      <h2 className="text-xl font-bold text-white mb-4 px-2">
-        {title}
-      </h2>
+      <div className="flex items-center justify-between mb-4 px-2">
+        <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">
+          {title}
+        </h2>
+        <span className="text-xs bg-cream-dark border border-cream-border rounded-full px-2 py-0.5 text-text-muted">
+          {jobs.length}
+        </span>
+      </div>
 
       {/* Jobs list */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {jobs.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 border border-purple-500/20 rounded-lg">
+          <div className="text-center py-8 text-text-muted border border-cream-border bg-cream-dark rounded-lg">
             No jobs in this lane yet
           </div>
         ) : (
@@ -56,6 +56,7 @@ export function KanbanLane({
             <JobCard
               key={job.job_id}
               job={job}
+              lane={lane}
               onApplyClick={(jobId, applyLink) => onApplyClick(jobId, applyLink)}
               isAnimating={animatingIds.has(job.job_id)}
             />

@@ -6,20 +6,16 @@ interface MobileTabNavProps {
 }
 
 const LANE_LABELS: Record<Lane, string> = {
-  new: 'New',
-  trending: 'Trending',
-  graduated: 'Graduated',
+  new: 'New Listings',
+  trending: 'In Progress',
+  graduated: 'Applied',
 };
 
-/**
- * Mobile tab navigation for switching between lanes
- * Only visible on mobile (md:hidden)
- */
 export function MobileTabNav({ activeLane, onLaneChange }: MobileTabNavProps) {
   const lanes: Lane[] = ['new', 'trending', 'graduated'];
 
   return (
-    <div className="md:hidden border-b border-purple-500/30 mb-6">
+    <div className="md:hidden border-b border-cream-border mb-6">
       <div className="flex">
         {lanes.map((lane) => {
           const isActive = lane === activeLane;
@@ -29,14 +25,13 @@ export function MobileTabNav({ activeLane, onLaneChange }: MobileTabNavProps) {
               onClick={() => onLaneChange(lane)}
               className={`flex-1 py-3 text-sm font-semibold transition-colors duration-200 relative ${
                 isActive
-                  ? 'text-white'
-                  : 'text-gray-400 hover:text-gray-300'
+                  ? 'text-primary'
+                  : 'text-text-muted hover:text-text-secondary'
               }`}
             >
               {LANE_LABELS[lane]}
-              {/* Active underline */}
               {isActive && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-pink-500" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               )}
             </button>
           );

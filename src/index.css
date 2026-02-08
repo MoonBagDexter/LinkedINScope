@@ -1,40 +1,41 @@
 @import "tailwindcss";
 
-/* Custom theme for degen aesthetic */
+/* Retro/Vintage Light Theme */
 @theme {
-  --color-degen-purple: #a855f7;
-  --color-degen-pink: #ec4899;
-  --color-degen-cyan: #22d3ee;
-  --color-degen-lime: #84cc16;
-  --color-degen-orange: #f97316;
-  --color-surface: #0a0a0a;
-  --color-surface-elevated: #1a1a1a;
-  --color-surface-hover: #2a2a2a;
+  --color-cream: #F5F0E1;
+  --color-cream-dark: #EDE8D0;
+  --color-cream-border: #D4CDBA;
+  --color-primary: #0055A4;
+  --color-primary-hover: #004080;
+  --color-primary-light: #E8F0FE;
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #6B6B6B;
+  --color-text-muted: #9B9B9B;
 }
 
-/* Base styles for dark theme */
+/* Base styles for light theme */
 body {
-  @apply bg-black text-white min-h-screen antialiased;
+  @apply bg-cream text-text-primary min-h-screen antialiased;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Custom scrollbar for degen aesthetic */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: #F5F0E1;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: #D4CDBA;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #B8B2A0;
 }
 
 /* Slide-in animation for lane migration (GPU-accelerated via transform) */
