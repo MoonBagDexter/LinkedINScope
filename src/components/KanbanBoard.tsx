@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallets } from '@privy-io/react-auth/solana';
-import { useLaneJobs } from '../hooks/useLaneJobs';
+import { useWallet } from '../contexts/WalletProvider';
+import { useLaneJobs, type JobWithClickCount } from '../hooks/useLaneJobs';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { useApplications } from '../hooks/useApplications';
 import { useCoinLaunch } from '../hooks/useCoinLaunch';
@@ -10,20 +9,17 @@ import { ApplyForm } from './ApplyForm';
 import { SharePrompt } from './SharePrompt';
 import { MobileTabNav } from './MobileTabNav';
 import type { Lane } from '../types/kanban';
-import type { JobWithClickCount } from '../hooks/useLaneJobs';
 import { toast } from 'sonner';
 
 const JOBS_PER_PAGE = 10;
 
 export function KanbanBoard() {
-  const { connectWallet } = usePrivy();
-  const { wallets } = useWallets();
-  const wallet = wallets[0];
+  const { address: walletAddress, connect: connectWallet } = useWallet();
 
   useRealtimeSync();
 
   const { jobsByLane, isLoading, error } = useLaneJobs();
-  const { applications, quickApply, submitApplication, getStatus } = useApplications(wallet?.address);
+  const { quickApply, submitApplication, getStatus } = useApplications(walletAddress ?? undefined);
   const { createCoinMetadata } = useCoinLaunch();
 
   const [activeMobileLane, setActiveMobileLane] = useState<Lane>('new');
@@ -31,18 +27,14 @@ export function KanbanBoard() {
   const [formJob, setFormJob] = useState<JobWithClickCount | null>(null);
   const [shareJob, setShareJob] = useState<{ job: JobWithClickCount; coinPhrase?: string; contractAddress?: string } | null>(null);
 
-  // Separate jobs by application status for the lanes
-  const newJobs = jobsByLane.new.filter(j => getStatus(j.job_id) === 'none');
-  const inProgressJobs = [
-    ...jobsByLane.new.filter(j => getStatus(j.job_id) === 'in_progress'),
-    ...jobsByLane.trending.filter(j => getStatus(j.job_id) === 'in_progress'),
-    ...jobsByLane.graduated.filter(j => getStatus(j.job_id) === 'in_progress'),
-  ];
-  const appliedJobs = [
-    ...jobsByLane.new.filter(j => getStatus(j.job_id) === 'applied'),
-    ...jobsByLane.trending.filter(j => getStatus(j.job_id) === 'applied'),
-    ...jobsByLane.graduated.filter(j => getStatus(j.job_id) === 'applied'),
-  ];
+  // Flatten all jobs, then separate by user's application status
+  const allJobs = [...jobsByLane.new, ...jobsByLane.trending, ...jobsByLane.graduated];
+  const seen = new Set<string>();
+  const uniqueJobs = allJobs.filter(j => { if (seen.has(j.job_id)) return false; seen.add(j.job_id); return true; });
+
+  const newJobs = uniqueJobs.filter(j => getStatus(j.job_id) === 'none');
+  const inProgressJobs = uniqueJobs.filter(j => getStatus(j.job_id) === 'in_progress');
+  const appliedJobs = uniqueJobs.filter(j => getStatus(j.job_id) === 'applied');
 
   const laneData: Record<Lane, { title: string; jobs: JobWithClickCount[] }> = {
     new: { title: 'New Job Listings', jobs: newJobs },
@@ -51,50 +43,45 @@ export function KanbanBoard() {
   };
 
   const handleQuickApply = async (job: JobWithClickCount) => {
-    if (!wallet) {
-      connectWallet({ walletList: ['phantom'] });
+    if (!walletAddress) {
+      connectWallet();
       return;
     }
-    // Open job link in new tab
-    window.open(job.job_apply_link, '_blank', 'noopener,noreferrer');
-    // Move to in_progress
-    await quickApply.mutateAsync({ jobId: job.job_id, walletAddr: wallet.address });
-    toast.success('Job moved to In Progress! Fill out the form to complete.');
+    // Immediately move to in_progress
+    await quickApply(job.job_id, walletAddress);
+    toast.success('Moved to In Progress! Click "Apply Now" to complete.');
   };
 
   const handleOpenForm = (job: JobWithClickCount) => {
+    // Open job link in new tab first
+    window.open(job.job_apply_link, '_blank', 'noopener,noreferrer');
+    // Then show the form
     setFormJob(job);
   };
 
   const handleSubmitForm = async (data: { name: string; age: string; availability: string; girthSize: string }) => {
-    if (!wallet || !formJob) return;
+    if (!walletAddress || !formJob) return;
 
-    const app = await submitApplication.mutateAsync({
+    const app = await submitApplication({
       jobId: formJob.job_id,
-      walletAddr: wallet.address,
+      walletAddr: walletAddress,
       ...data,
     });
 
-    // Auto-generate coin metadata
-    const coin = await createCoinMetadata.mutateAsync({
+    const coin = await createCoinMetadata({
       applicationId: app.id,
       jobId: formJob.job_id,
-      walletAddress: wallet.address,
+      walletAddress: walletAddress,
       employerName: formJob.employer_name,
     });
 
     setFormJob(null);
     toast.success('Application submitted! 🚀');
-
-    // Show share prompt
-    setShareJob({ job: formJob, coinPhrase: coin.coin_phrase, contractAddress: coin.contract_address ?? undefined });
+    setShareJob({ job: formJob, coinPhrase: coin.coin_phrase, contractAddress: coin.contract_address });
   };
 
   const handleShareX = (job: JobWithClickCount) => {
-    const app = applications.find(a => a.job_id === job.job_id);
-    if (app) {
-      setShareJob({ job });
-    }
+    setShareJob({ job });
   };
 
   const paginate = (jobs: JobWithClickCount[], lane: Lane) => {
@@ -164,7 +151,6 @@ export function KanbanBoard() {
                 )}
               </div>
 
-              {/* Pagination */}
               {tp > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-4">
                   <button
@@ -174,9 +160,7 @@ export function KanbanBoard() {
                   >
                     ←
                   </button>
-                  <span className="text-sm text-text-muted">
-                    {pages[lane] + 1} / {tp}
-                  </span>
+                  <span className="text-sm text-text-muted">{pages[lane] + 1} / {tp}</span>
                   <button
                     onClick={() => setPages(p => ({ ...p, [lane]: Math.min(tp - 1, p[lane] + 1) }))}
                     disabled={pages[lane] >= tp - 1}
@@ -191,7 +175,6 @@ export function KanbanBoard() {
         })}
       </div>
 
-      {/* Apply Form Modal */}
       {formJob && (
         <ApplyForm
           jobTitle={formJob.job_title}
@@ -201,7 +184,6 @@ export function KanbanBoard() {
         />
       )}
 
-      {/* Share on X Prompt */}
       {shareJob && (
         <SharePrompt
           jobTitle={shareJob.job.job_title}

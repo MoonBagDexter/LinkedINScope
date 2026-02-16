@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase';
-import type { CoinLaunch } from '../hooks/useCoinLaunch';
+import { useAllCoins, updateCoin, type CoinLaunch } from '../hooks/useCoinLaunch';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin';
 
@@ -23,15 +21,8 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
             className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream text-text-primary mb-3 focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <div className="flex gap-2">
-            <button onClick={onBack} className="flex-1 px-4 py-2 rounded-lg border border-cream-border text-text-secondary hover:bg-cream transition-colors">
-              Back
-            </button>
-            <button
-              onClick={() => password === ADMIN_PASSWORD && setAuthed(true)}
-              className="flex-1 px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors"
-            >
-              Login
-            </button>
+            <button onClick={onBack} className="flex-1 px-4 py-2 rounded-lg border border-cream-border text-text-secondary hover:bg-cream transition-colors">Back</button>
+            <button onClick={() => password === ADMIN_PASSWORD && setAuthed(true)} className="flex-1 px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors">Login</button>
           </div>
         </div>
       </div>
@@ -42,32 +33,14 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
 }
 
 function AdminDashboard({ onBack }: { onBack: () => void }) {
-  const queryClient = useQueryClient();
+  const coins = useAllCoins();
   const [editingCA, setEditingCA] = useState<{ id: string; value: string } | null>(null);
+  const [, forceUpdate] = useState(0);
 
-  const { data: coins = [], isLoading } = useQuery({
-    queryKey: ['admin-coins'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('coin_launches')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as CoinLaunch[];
-    },
-    refetchInterval: 5000,
-  });
-
-  const updateCoin = useMutation({
-    mutationFn: async (params: { id: string; status?: string; contract_address?: string }) => {
-      const { error } = await supabase
-        .from('coin_launches')
-        .update({ ...params, updated_at: new Date().toISOString() })
-        .eq('id', params.id);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-coins'] }),
-  });
+  const handleUpdate = (id: string, updates: Partial<CoinLaunch>) => {
+    updateCoin(id, updates);
+    forceUpdate(n => n + 1);
+  };
 
   const pending = coins.filter(c => c.status === 'pending');
   const approved = coins.filter(c => c.status === 'approved');
@@ -100,10 +73,8 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
         </div>
       </div>
 
-      {isLoading ? (
-        <p className="text-text-muted text-center py-8">Loading...</p>
-      ) : coins.length === 0 ? (
-        <p className="text-text-muted text-center py-8">No coin launches yet</p>
+      {coins.length === 0 ? (
+        <p className="text-text-muted text-center py-8">No coin launches yet. Apply to a job to generate one.</p>
       ) : (
         <div className="space-y-3">
           {coins.map(coin => (
@@ -112,19 +83,12 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-bold text-text-primary">{coin.coin_name}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(coin.status)}`}>
-                      {coin.status}
-                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(coin.status)}`}>{coin.status}</span>
                   </div>
                   <p className="text-sm text-text-secondary italic">"{coin.coin_phrase}"</p>
-                  <p className="text-xs text-text-muted mt-1">
-                    Wallet: {coin.wallet_address.slice(0, 8)}...{coin.wallet_address.slice(-4)}
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    {new Date(coin.created_at).toLocaleString()}
-                  </p>
+                  <p className="text-xs text-text-muted mt-1">Wallet: {coin.wallet_address.slice(0, 8)}...{coin.wallet_address.slice(-4)}</p>
+                  <p className="text-xs text-text-muted">{new Date(coin.created_at).toLocaleString()}</p>
 
-                  {/* Contract Address input */}
                   {coin.status === 'approved' && (
                     <div className="mt-2 flex gap-2">
                       {editingCA?.id === coin.id ? (
@@ -136,20 +100,12 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
                             className="flex-1 px-2 py-1 text-xs rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                           <button
-                            onClick={() => {
-                              updateCoin.mutate({ id: coin.id, contract_address: editingCA.value });
-                              setEditingCA(null);
-                            }}
+                            onClick={() => { handleUpdate(coin.id, { contract_address: editingCA.value }); setEditingCA(null); }}
                             className="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary-hover"
-                          >
-                            Save
-                          </button>
+                          >Save</button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => setEditingCA({ id: coin.id, value: coin.contract_address || '' })}
-                          className="text-xs text-primary hover:underline"
-                        >
+                        <button onClick={() => setEditingCA({ id: coin.id, value: coin.contract_address || '' })} className="text-xs text-primary hover:underline">
                           {coin.contract_address ? `CA: ${coin.contract_address.slice(0, 12)}... (edit)` : '+ Add Contract Address'}
                         </button>
                       )}
@@ -157,21 +113,10 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
                   )}
                 </div>
 
-                {/* Action buttons */}
                 {coin.status === 'pending' && (
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => updateCoin.mutate({ id: coin.id, status: 'approved' })}
-                      className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
-                    >
-                      ✓ Approve
-                    </button>
-                    <button
-                      onClick={() => updateCoin.mutate({ id: coin.id, status: 'rejected' })}
-                      className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
-                    >
-                      ✗ Reject
-                    </button>
+                    <button onClick={() => handleUpdate(coin.id, { status: 'approved' })} className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">✓ Approve</button>
+                    <button onClick={() => handleUpdate(coin.id, { status: 'rejected' })} className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors">✗ Reject</button>
                   </div>
                 )}
               </div>

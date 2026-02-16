@@ -1,12 +1,9 @@
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallets } from '@privy-io/react-auth/solana';
+import { useWallet } from '../contexts/WalletProvider';
 import { truncateAddress } from '../utils/formatting';
 import { usePresence } from '../hooks/usePresence';
 
 export function Header() {
-  const { connectWallet, authenticated, logout } = usePrivy();
-  const { wallets } = useWallets();
-  const wallet = wallets[0];
+  const { address, connect, disconnect } = useWallet();
   const userCount = usePresence();
 
   return (
@@ -21,13 +18,13 @@ export function Header() {
             {userCount} {userCount === 1 ? 'degen' : 'degens'} online
           </span>
 
-          {authenticated && wallet ? (
+          {address ? (
             <div className="flex items-center gap-3">
               <span className="text-sm text-text-secondary font-mono hidden sm:block">
-                {truncateAddress(wallet.address)}
+                {truncateAddress(address)}
               </span>
               <button
-                onClick={logout}
+                onClick={disconnect}
                 className="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
               >
                 Disconnect
@@ -35,7 +32,7 @@ export function Header() {
             </div>
           ) : (
             <button
-              onClick={() => connectWallet({ walletList: ['phantom'] })}
+              onClick={connect}
               className="bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
               Connect Phantom
