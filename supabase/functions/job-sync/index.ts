@@ -1,13 +1,4 @@
-// Supabase Edge Function: Job Sync
-// Purpose: Fetch jobs from JSearch API and cache in Supabase database
-// Trigger: Scheduled daily via pg_cron OR manual invocation
-// Runtime: Deno (uses esm.sh imports, native fetch)
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
 
 interface JSearchJob {
   job_id: string;
@@ -27,144 +18,121 @@ interface JSearchJob {
 
 interface JSearchResponse {
   status: string;
-  request_id: string;
   data: JSearchJob[];
 }
 
-interface SyncResult {
-  success: boolean;
-  jobCount: number;
-  timestamp: string;
-  error?: string;
-}
+// Diverse search queries to get 50+ distinct jobs across service industry
+const SEARCH_QUERIES = [
+  'McDonald\'s crew member USA',
+  'Walmart cashier part time USA',
+  'Target team member USA',
+  'Starbucks barista USA',
+  'Subway sandwich artist USA',
+  'Chick-fil-A team member USA',
+  'hotel front desk receptionist USA',
+  'retail sales associate part time USA',
+  'restaurant server part time USA',
+  'Costco warehouse associate USA',
+  'Wendy\'s crew member USA',
+  'Taco Bell team member USA',
+  'Burger King crew USA',
+  'Dunkin Donuts crew member USA',
+  'Chipotle crew member USA',
+  'Home Depot cashier USA',
+  'grocery store clerk part time USA',
+  'fast food cashier USA',
+  'hotel housekeeper USA',
+  'pizza delivery driver USA',
+];
 
-// ============================================================================
-// FETCH WITH RETRY LOGIC
-// ============================================================================
-
-async function fetchWithRetry(
-  url: string,
-  options: RequestInit,
-  maxRetries = 3
-): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
   let lastError: Error | null = null;
-
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url, options);
-
-      // Retry on rate limit (429) or server errors (5xx)
       if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
-        // Exponential backoff with jitter: 100ms, 200ms, 400ms + random 30%
-        const baseDelay = 100 * Math.pow(2, attempt - 1);
-        const jitter = baseDelay * 0.3 * Math.random();
-        const delay = baseDelay + jitter;
-
-        console.log(`[job-sync] Attempt ${attempt} failed with status ${response.status}, retrying in ${Math.round(delay)}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise(r => setTimeout(r, 100 * Math.pow(2, attempt - 1)));
         continue;
       }
-
       return response;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(`[job-sync] Attempt ${attempt} failed:`, lastError.message);
-
-      if (attempt < maxRetries) {
-        const baseDelay = 100 * Math.pow(2, attempt - 1);
-        const jitter = baseDelay * 0.3 * Math.random();
-        const delay = baseDelay + jitter;
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+      if (attempt < maxRetries) await new Promise(r => setTimeout(r, 100 * Math.pow(2, attempt - 1)));
     }
   }
-
   throw lastError || new Error('Failed to fetch after retries');
 }
 
-// ============================================================================
-// MAIN HANDLER
-// ============================================================================
-
-Deno.serve(async (req) => {
+Deno.serve(async () => {
   try {
-    console.log('[job-sync] Starting job sync...');
-
-    // Initialize Supabase client with service_role key (bypasses RLS)
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const jsearchApiKey = Deno.env.get('JSEARCH_API_KEY');
 
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      throw new Error('Missing Supabase environment variables');
-    }
-
-    if (!jsearchApiKey) {
-      throw new Error('Missing JSEARCH_API_KEY secret. Set via: supabase secrets set JSEARCH_API_KEY=your_key');
-    }
+    if (!supabaseUrl || !supabaseServiceRoleKey) throw new Error('Missing Supabase env vars');
+    if (!jsearchApiKey) throw new Error('Missing JSEARCH_API_KEY');
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Fetch jobs from JSearch API
-    console.log('[job-sync] Fetching jobs from JSearch API...');
-    const jsearchUrl = new URL('https://jsearch.p.rapidapi.com/search');
-    jsearchUrl.searchParams.set('query', 'fast food crew member USA');
-    jsearchUrl.searchParams.set('num_pages', '10');
+    // Fetch from multiple queries for diversity
+    const allJobs = new Map<string, JSearchJob>();
 
-    const response = await fetchWithRetry(jsearchUrl.toString(), {
-      method: 'GET',
-      headers: {
-        'X-RapidAPI-Key': jsearchApiKey,
-        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
-      },
-    });
+    for (const query of SEARCH_QUERIES) {
+      try {
+        const url = new URL('https://jsearch.p.rapidapi.com/search');
+        url.searchParams.set('query', query);
+        url.searchParams.set('num_pages', '1');
 
-    if (!response.ok) {
-      throw new Error(`JSearch API returned ${response.status}: ${await response.text()}`);
+        const response = await fetchWithRetry(url.toString(), {
+          method: 'GET',
+          headers: {
+            'X-RapidAPI-Key': jsearchApiKey,
+            'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
+          },
+        });
+
+        if (!response.ok) {
+          console.warn(`[job-sync] Query "${query}" failed: ${response.status}`);
+          continue;
+        }
+
+        const data: JSearchResponse = await response.json();
+        for (const job of (data.data || [])) {
+          if (!allJobs.has(job.job_id)) allJobs.set(job.job_id, job);
+        }
+
+        console.log(`[job-sync] "${query}" → ${data.data?.length || 0} jobs (total unique: ${allJobs.size})`);
+
+        // Small delay between requests to avoid rate limiting
+        await new Promise(r => setTimeout(r, 200));
+      } catch (err) {
+        console.warn(`[job-sync] Query "${query}" error:`, err);
+      }
     }
 
-    const jsearchData: JSearchResponse = await response.json();
-    const jobs = jsearchData.data || [];
+    const jobs = Array.from(allJobs.values());
+    console.log(`[job-sync] Total unique jobs: ${jobs.length}`);
 
-    console.log(`[job-sync] Received ${jobs.length} jobs from JSearch API`);
-
-    // Identify which jobs are new vs returning, preserving existing created_at
-    console.log('[job-sync] Checking for new vs existing jobs...');
+    // Check existing jobs
     const { data: existingRows } = await supabase
       .from('jobs')
       .select('job_id, created_at')
       .in('job_id', jobs.map(j => j.job_id));
-    const existingMap = new Map(
-      (existingRows || []).map(r => [r.job_id, r.created_at])
-    );
+    const existingMap = new Map((existingRows || []).map(r => [r.job_id, r.created_at]));
 
-    // Build staggered drip times for new jobs
+    // Drip timing for new jobs
     const newJobs = jobs.filter(j => !existingMap.has(j.job_id));
-    const shuffledNewIds = new Set(
-      [...newJobs].sort(() => Math.random() - 0.5).map(j => j.job_id)
-    );
     const now = Date.now();
     const DRIP_WINDOW_MS = 55 * 60 * 1000;
-    let dripIndex = 0;
     const dripTimes = new Map<string, string>();
-    for (const id of shuffledNewIds) {
-      const offset = shuffledNewIds.size === 1
-        ? 0
-        : Math.round((dripIndex / (shuffledNewIds.size - 1)) * DRIP_WINDOW_MS);
-      dripTimes.set(id, new Date(now + offset).toISOString());
-      dripIndex++;
-    }
+    const shuffled = [...newJobs].sort(() => Math.random() - 0.5);
+    shuffled.forEach((j, i) => {
+      const offset = shuffled.length === 1 ? 0 : Math.round((i / (shuffled.length - 1)) * DRIP_WINDOW_MS);
+      dripTimes.set(j.job_id, new Date(now + offset).toISOString());
+    });
 
-    if (newJobs.length > 0) {
-      console.log(`[job-sync] ${newJobs.length} new jobs will drip in over 55 minutes`);
-    }
-
-    // Upsert jobs in one atomic operation
-    // - Existing jobs: preserve their created_at
-    // - New jobs: set created_at to staggered future times for drip effect
-    // CRITICAL: Do NOT include click_count or lane - preserve existing values
-    console.log('[job-sync] Upserting jobs to database...');
-    const jobsToUpsert = jobs.map((job) => ({
+    // Upsert
+    const jobsToUpsert = jobs.map(job => ({
       job_id: job.job_id,
       job_title: job.job_title,
       employer_name: job.employer_name,
@@ -185,50 +153,22 @@ Deno.serve(async (req) => {
 
     const { error: upsertError } = await supabase
       .from('jobs')
-      .upsert(jobsToUpsert, {
-        onConflict: 'job_id',
-        ignoreDuplicates: false,
-      });
+      .upsert(jobsToUpsert, { onConflict: 'job_id', ignoreDuplicates: false });
 
-    if (upsertError) {
-      console.error('[job-sync] Error upserting jobs:', upsertError);
-      throw new Error(`Failed to upsert jobs: ${upsertError.message}`);
-    }
+    if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`);
 
-    console.log(`[job-sync] Successfully synced ${jobs.length} jobs`);
+    console.log(`[job-sync] Synced ${jobs.length} jobs (${newJobs.length} new)`);
 
-    // Return success response
-    const result: SyncResult = {
-      success: true,
-      jobCount: jobs.length,
-      timestamp: new Date().toISOString(),
-    };
-
-    return new Response(
-      JSON.stringify(result),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ success: true, jobCount: jobs.length, newJobs: newJobs.length }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    // Error handling
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('[job-sync] Fatal error:', errorMessage);
-
-    const result: SyncResult = {
-      success: false,
-      jobCount: 0,
-      timestamp: new Date().toISOString(),
-      error: errorMessage,
-    };
-
-    return new Response(
-      JSON.stringify(result),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[job-sync] Fatal:', msg);
+    return new Response(JSON.stringify({ success: false, error: msg }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 });
