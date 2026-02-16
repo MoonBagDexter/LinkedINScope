@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAllCoins, updateCoin, type CoinLaunch } from '../hooks/useCoinLaunch';
 import { getSettings, saveSettings, type GlobalSettings } from '../hooks/useSettings';
+import { launchOnPumpFun } from '../services/pumpfun';
+import { toast } from 'sonner';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin';
 
@@ -12,15 +14,12 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="bg-cream-dark border border-cream-border rounded-2xl p-8 w-full max-w-sm">
-          <h1 className="text-xl font-bold mb-4">Admin Panel 🔐</h1>
-          <input
-            type="password"
-            value={password}
+          <h1 className="text-xl font-bold mb-4">Admin Panel</h1>
+          <input type="password" value={password}
             onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && password === ADMIN_PASSWORD && setAuthed(true)}
             placeholder="Password"
-            className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream text-text-primary mb-3 focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+            className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream text-text-primary mb-3 focus:outline-none focus:ring-2 focus:ring-primary" />
           <div className="flex gap-2">
             <button onClick={onBack} className="flex-1 px-4 py-2 rounded-lg border border-cream-border text-text-secondary hover:bg-cream transition-colors">Back</button>
             <button onClick={() => password === ADMIN_PASSWORD && setAuthed(true)} className="flex-1 px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors">Login</button>
@@ -45,7 +44,7 @@ function SettingsPanel() {
 
   return (
     <div className="bg-primary-light border border-primary/20 rounded-xl p-5 mb-6">
-      <h2 className="text-lg font-bold text-text-primary mb-3">⚙️ Global Settings (Set & Forget)</h2>
+      <h2 className="text-lg font-bold text-text-primary mb-3">Global Settings (Set and Forget)</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
           <label className="text-xs text-text-muted block mb-1">Site URL</label>
@@ -64,7 +63,7 @@ function SettingsPanel() {
         </div>
       </div>
       <button onClick={handleSave} className="mt-3 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors font-semibold">
-        {saved ? '✓ Saved!' : 'Save Settings'}
+        {saved ? 'Saved' : 'Save Settings'}
       </button>
     </div>
   );
@@ -73,11 +72,37 @@ function SettingsPanel() {
 function AdminDashboard({ onBack }: { onBack: () => void }) {
   const coins = useAllCoins();
   const [editing, setEditing] = useState<{ id: string; coin_name: string; coin_phrase: string; contract_address: string } | null>(null);
+  const [launching, setLaunching] = useState<string | null>(null);
   const [, forceUpdate] = useState(0);
 
   const handleUpdate = (id: string, updates: Partial<CoinLaunch>) => {
     updateCoin(id, updates);
     forceUpdate(n => n + 1);
+  };
+
+  const handleApprove = async (coin: CoinLaunch) => {
+    setLaunching(coin.id);
+    try {
+      const result = await launchOnPumpFun({
+        coinName: coin.coin_name,
+        coinTicker: coin.coin_phrase,
+        description: `LinkedInScope community coin for ${coin.coin_name}`,
+        employerName: coin.coin_name,
+      });
+
+      if (result.success && result.mintAddress) {
+        handleUpdate(coin.id, { status: 'approved', contract_address: result.mintAddress });
+        toast.success(`Launched! CA: ${result.mintAddress.slice(0, 12)}...`);
+      } else {
+        handleUpdate(coin.id, { status: 'approved' });
+        toast.error(`Launch failed: ${result.error || 'Unknown error'}. Coin approved without CA.`);
+      }
+    } catch (err) {
+      handleUpdate(coin.id, { status: 'approved' });
+      toast.error('Launch error. Coin approved without CA.');
+    } finally {
+      setLaunching(null);
+    }
   };
 
   const startEdit = (coin: CoinLaunch) => {
@@ -86,9 +111,7 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
 
   const saveEdit = () => {
     if (!editing) return;
-    const name = editing.coin_name.slice(0, 32);
-    const phrase = editing.coin_phrase.slice(0, 13);
-    handleUpdate(editing.id, { coin_name: name, coin_phrase: phrase, contract_address: editing.contract_address || undefined });
+    handleUpdate(editing.id, { coin_name: editing.coin_name.slice(0, 32), coin_phrase: editing.coin_phrase.slice(0, 13), contract_address: editing.contract_address || undefined });
     setEditing(null);
   };
 
@@ -104,8 +127,8 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
   return (
     <div className="max-w-4xl mx-auto p-4">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Admin Panel 🛠️</h1>
-        <button onClick={onBack} className="text-sm text-primary hover:underline">← Back to app</button>
+        <h1 className="text-2xl font-bold">Admin Panel</h1>
+        <button onClick={onBack} className="text-sm text-primary hover:underline">Back to app</button>
       </div>
 
       <SettingsPanel />
@@ -131,6 +154,7 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
         <div className="space-y-3">
           {coins.map(coin => {
             const isEditing = editing?.id === coin.id;
+            const isLaunching = launching === coin.id;
             return (
               <div key={coin.id} className="bg-cream-dark border border-cream-border rounded-lg p-4">
                 <div className="flex items-start justify-between gap-4">
@@ -171,14 +195,20 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
                         {coin.contract_address && <p className="text-xs text-primary font-mono mt-1">CA: {coin.contract_address}</p>}
                         <p className="text-xs text-text-muted mt-1">Wallet: {coin.wallet_address.slice(0, 8)}...{coin.wallet_address.slice(-4)}</p>
                         <p className="text-xs text-text-muted">{new Date(coin.created_at).toLocaleString()}</p>
-                        <button onClick={() => startEdit(coin)} className="text-xs text-primary hover:underline mt-1">✏️ Edit metadata</button>
+                        <button onClick={() => startEdit(coin)} className="text-xs text-primary hover:underline mt-1">Edit metadata</button>
                       </>
                     )}
                   </div>
                   {!isEditing && coin.status === 'pending' && (
                     <div className="flex gap-2">
-                      <button onClick={() => handleUpdate(coin.id, { status: 'approved' })} className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">✓ Approve</button>
-                      <button onClick={() => handleUpdate(coin.id, { status: 'rejected' })} className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors">✗ Reject</button>
+                      <button onClick={() => handleApprove(coin)} disabled={isLaunching}
+                        className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50">
+                        {isLaunching ? 'Launching...' : 'Approve + Launch'}
+                      </button>
+                      <button onClick={() => handleUpdate(coin.id, { status: 'rejected' })}
+                        className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors">
+                        Reject
+                      </button>
                     </div>
                   )}
                 </div>

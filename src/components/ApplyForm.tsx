@@ -18,7 +18,7 @@ export function ApplyForm({ jobTitle, employerName, onSubmit, onClose }: ApplyFo
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-cream rounded-2xl p-6 w-full max-w-md shadow-2xl border border-cream-border" onClick={e => e.stopPropagation()}>
-        <h2 className="text-xl font-bold text-text-primary mb-1">Almost there, degen! 🚀</h2>
+        <h2 className="text-xl font-bold text-text-primary mb-1">Almost there!</h2>
         <p className="text-sm text-text-secondary mb-6">
           Applying to <span className="font-semibold">{jobTitle}</span> at {employerName}
         </p>
@@ -26,48 +26,29 @@ export function ApplyForm({ jobTitle, employerName, onSubmit, onClose }: ApplyFo
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-text-primary mb-1">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your degen alias"
-              className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream-dark text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your alias"
+              className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream-dark text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-text-primary mb-1">Age</label>
-            <input
-              type="text"
-              value={age}
-              onChange={e => setAge(e.target.value)}
-              placeholder="How many candles on the cake?"
-              className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream-dark text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <input type="text" value={age} onChange={e => setAge(e.target.value)} placeholder="How old?"
+              className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream-dark text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-text-primary mb-1">Availability</label>
-            <select
-              value={availability}
-              onChange={e => setAvailability(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream-dark text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-            >
+            <select value={availability} onChange={e => setAvailability(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream-dark text-text-primary focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="">Select availability</option>
-              <option value="full-time">Full-time degen</option>
-              <option value="part-time">Part-time (still trading)</option>
+              <option value="full-time">Full time</option>
+              <option value="part-time">Part time</option>
               <option value="weekends">Weekends only</option>
-              <option value="flexible">Flexible (wen moon)</option>
+              <option value="flexible">Flexible</option>
             </select>
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">Girth Size 🍆</label>
-            <select
-              value={girthSize}
-              onChange={e => setGirthSize(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream-dark text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-            >
+            <label className="block text-sm font-medium text-text-primary mb-1">Girth Size</label>
+            <select value={girthSize} onChange={e => setGirthSize(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-cream-border bg-cream-dark text-text-primary focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="">Select girth</option>
               <option value="smol">Smol (but mighty)</option>
               <option value="average">Average (like my portfolio)</option>
@@ -78,18 +59,10 @@ export function ApplyForm({ jobTitle, employerName, onSubmit, onClose }: ApplyFo
         </div>
 
         <div className="flex gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 rounded-lg border border-cream-border text-text-secondary hover:bg-cream-dark transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => canSubmit && onSubmit({ name, age, availability, girthSize })}
-            disabled={!canSubmit}
-            className="flex-1 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Submit & Apply 🚀
+          <button onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-cream-border text-text-secondary hover:bg-cream-dark transition-colors">Cancel</button>
+          <button onClick={() => canSubmit && onSubmit({ name, age, availability, girthSize })} disabled={!canSubmit}
+            className="flex-1 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Submit & Apply
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { WalletProviderWrapper } from './contexts/WalletProvider';
 import { Header } from './components/Header';
 import { KanbanBoard } from './components/KanbanBoard';
 import { AdminPanel } from './components/AdminPanel';
+import { ActivityTracker } from './components/ActivityTracker';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ function App() {
               >
                 Admin
               </button>
+              <ActivityTracker />
             </>
           )}
           <Toaster position="top-center" toastOptions={{ duration: 2000 }} visibleToasts={3} richColors />
