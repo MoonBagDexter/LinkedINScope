@@ -18,10 +18,10 @@ interface JobCardProps {
   onQuickApply: () => void;
   onOpenApplyForm: () => void;
   onShareX: () => void;
-  isAnimating?: boolean;
+  isDripping?: boolean;
 }
 
-export function JobCard({ job, appStatus, onQuickApply, onOpenApplyForm, onShareX, isAnimating = false }: JobCardProps) {
+export function JobCard({ job, appStatus, onQuickApply, onOpenApplyForm, onShareX, isDripping = false }: JobCardProps) {
   const [postedAgo, setPostedAgo] = useState(() => job.created_at ? timeAgo(job.created_at) : '');
 
   useEffect(() => {
@@ -35,14 +35,17 @@ export function JobCard({ job, appStatus, onQuickApply, onOpenApplyForm, onShare
   const logoColor = getCompanyColor(job.employer_name);
   const logoUrl = `https://logo.clearbit.com/${job.employer_name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
 
-  const location = [job.job_city, job.job_state].filter(Boolean).join(', ') || 'Location not specified';
+  const location = [job.job_city, job.job_state].filter(Boolean).join(', ') || 'USA';
 
   return (
-    <div className={`bg-cream-dark border border-cream-border rounded-lg p-4 hover:shadow-md transition-all duration-200 ${isAnimating ? 'animate-[slideIn_250ms_cubic-bezier(0.215,0.61,0.355,1)]' : ''}`}>
+    <div className={`
+      bg-cream-dark border border-cream-border rounded-lg p-4 transition-all duration-300 cursor-pointer
+      hover:shadow-lg hover:scale-[1.02] hover:border-primary/40 hover:bg-cream
+      ${isDripping ? 'animate-[drip_600ms_ease-out]' : ''}
+    `}>
       <div className="flex items-center gap-4">
-        {/* Company logo */}
         <div
-          className="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg overflow-hidden"
+          className="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg overflow-hidden shadow-md"
           style={{ backgroundColor: logoColor }}
         >
           <img
@@ -57,40 +60,40 @@ export function JobCard({ job, appStatus, onQuickApply, onOpenApplyForm, onShare
           />
         </div>
 
-        {/* Job info */}
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-bold text-text-primary leading-tight truncate">{job.job_title}</h3>
-          <p className="text-text-secondary text-sm">{job.employer_name}</p>
-          <p className="text-text-muted text-sm">{location}</p>
-          {postedAgo && <span className="text-text-muted text-xs">Posted {postedAgo}</span>}
+          <p className="text-text-secondary text-sm font-medium">{job.employer_name}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-text-muted text-xs">📍 {location}</span>
+            {postedAgo && <span className="text-text-muted text-xs">• {postedAgo}</span>}
+          </div>
         </div>
 
-        {/* Action button based on status */}
         <div className="flex-shrink-0">
           {appStatus === 'none' && (
             <button
-              onClick={onQuickApply}
-              className="bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              onClick={e => { e.stopPropagation(); onQuickApply(); }}
+              className="bg-primary hover:bg-primary-hover text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-md hover:shadow-lg"
             >
-              Quick Apply
+              🚀 Quick Apply
             </button>
           )}
 
           {appStatus === 'in_progress' && (
             <button
-              onClick={onOpenApplyForm}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors animate-pulse"
+              onClick={e => { e.stopPropagation(); onOpenApplyForm(); }}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all animate-pulse hover:animate-none hover:scale-105 shadow-md"
             >
-              ⭐ Apply Now
+              ⭐ Complete Application
             </button>
           )}
 
           {appStatus === 'applied' && (
             <button
-              onClick={onShareX}
-              className="bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-transform hover:scale-105 animate-pulse"
+              onClick={e => { e.stopPropagation(); onShareX(); }}
+              className="bg-black hover:bg-gray-800 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all animate-pulse hover:animate-none hover:scale-105 shadow-md"
             >
-              Share on 𝕏
+              📢 Share on 𝕏
             </button>
           )}
         </div>

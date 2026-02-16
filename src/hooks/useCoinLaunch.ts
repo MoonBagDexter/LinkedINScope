@@ -1,10 +1,15 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
+const DEGEN_TICKERS = [
+  'WAGMI', 'LFG', 'APE', 'DGEN', 'MOON', 'BAG', 'FLIP', 'GRIND',
+  'FRYCOOK', 'WHALE', 'NGMI', 'COPE', 'HODL',
+];
+
 const DEGEN_PHRASES = [
   'wagmi ser', 'lfg to the moon', 'ape in or cry later', 'diamond hands only',
-  'ngmi if you skip this', 'touch grass after this bag', 'ser this is a Wendy\'s',
-  'flipping burgers to flipping bags', 'minimum wage maximum gains',
-  'from fry cook to whale', 'burger flipper billionaire', 'cash register to crypto',
+  'ngmi if you skip', 'touch grass after', 'ser this is a Wendys',
+  'flipping burgers to bags', 'min wage max gains',
+  'fry cook to whale', 'burger flipper billionaire', 'cash register to crypto',
 ];
 
 export interface CoinLaunch {
@@ -14,6 +19,7 @@ export interface CoinLaunch {
   wallet_address: string;
   coin_name: string;
   coin_phrase: string;
+  coin_ticker: string;
   status: 'pending' | 'approved' | 'rejected';
   contract_address?: string;
   created_at: string;
@@ -49,13 +55,18 @@ export function useCoinLaunch() {
   const createCoinMetadata = useCallback(async (params: {
     applicationId: string; jobId: string; walletAddress: string; employerName: string;
   }) => {
-    const shortAddr = params.walletAddress.slice(0, 6);
+    const shortAddr = params.walletAddress.slice(0, 4);
+    const employer = params.employerName.replace(/[^a-zA-Z0-9 ]/g, '').split(' ')[0];
+    const ticker = DEGEN_TICKERS[Math.floor(Math.random() * DEGEN_TICKERS.length)];
     const phrase = DEGEN_PHRASES[Math.floor(Math.random() * DEGEN_PHRASES.length)];
-    const coinName = `${params.employerName.split(' ')[0]}x${shortAddr}`;
+    // pump.fun limits: name max 32, ticker max 13
+    const coinName = `${employer}x${shortAddr} ${phrase}`.slice(0, 32);
+    const coinTicker = `${employer.slice(0, 8)}${ticker}`.slice(0, 13).toUpperCase();
+
     const coin: CoinLaunch = {
       id: crypto.randomUUID(), application_id: params.applicationId, job_id: params.jobId,
       wallet_address: params.walletAddress, coin_name: coinName, coin_phrase: phrase,
-      status: 'pending', created_at: new Date().toISOString(),
+      coin_ticker: coinTicker, status: 'pending', created_at: new Date().toISOString(),
     };
     saveCoins([...getCoins(), coin]);
     return coin;

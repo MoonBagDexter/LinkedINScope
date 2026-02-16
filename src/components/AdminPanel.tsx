@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAllCoins, updateCoin, type CoinLaunch } from '../hooks/useCoinLaunch';
+import { getSettings, saveSettings, type GlobalSettings } from '../hooks/useSettings';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin';
 
@@ -32,6 +33,43 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
   return <AdminDashboard onBack={onBack} />;
 }
 
+function SettingsPanel() {
+  const [settings, setSettings] = useState<GlobalSettings>(getSettings);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    saveSettings(settings);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div className="bg-primary-light border border-primary/20 rounded-xl p-5 mb-6">
+      <h2 className="text-lg font-bold text-text-primary mb-3">⚙️ Global Settings (Set & Forget)</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label className="text-xs text-text-muted block mb-1">Site URL</label>
+          <input value={settings.siteUrl} onChange={e => setSettings({ ...settings, siteUrl: e.target.value })}
+            placeholder="https://yoursite.com" className="w-full px-3 py-2 text-sm rounded-lg border border-cream-border bg-cream focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <div>
+          <label className="text-xs text-text-muted block mb-1">Twitter Handle</label>
+          <input value={settings.twitterHandle} onChange={e => setSettings({ ...settings, twitterHandle: e.target.value })}
+            placeholder="@LinkedInScope" className="w-full px-3 py-2 text-sm rounded-lg border border-cream-border bg-cream focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <div>
+          <label className="text-xs text-text-muted block mb-1">Default Contract Address</label>
+          <input value={settings.defaultCA} onChange={e => setSettings({ ...settings, defaultCA: e.target.value })}
+            placeholder="Token CA for tweets" className="w-full px-3 py-2 text-sm rounded-lg border border-cream-border bg-cream focus:outline-none focus:ring-2 focus:ring-primary font-mono" />
+        </div>
+      </div>
+      <button onClick={handleSave} className="mt-3 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors font-semibold">
+        {saved ? '✓ Saved!' : 'Save Settings'}
+      </button>
+    </div>
+  );
+}
+
 function AdminDashboard({ onBack }: { onBack: () => void }) {
   const coins = useAllCoins();
   const [editing, setEditing] = useState<{ id: string; coin_name: string; coin_phrase: string; contract_address: string } | null>(null);
@@ -48,7 +86,9 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
 
   const saveEdit = () => {
     if (!editing) return;
-    handleUpdate(editing.id, { coin_name: editing.coin_name, coin_phrase: editing.coin_phrase, contract_address: editing.contract_address || undefined });
+    const name = editing.coin_name.slice(0, 32);
+    const phrase = editing.coin_phrase.slice(0, 13);
+    handleUpdate(editing.id, { coin_name: name, coin_phrase: phrase, contract_address: editing.contract_address || undefined });
     setEditing(null);
   };
 
@@ -67,6 +107,8 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
         <h1 className="text-2xl font-bold">Admin Panel 🛠️</h1>
         <button onClick={onBack} className="text-sm text-primary hover:underline">← Back to app</button>
       </div>
+
+      <SettingsPanel />
 
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
@@ -89,7 +131,6 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
         <div className="space-y-3">
           {coins.map(coin => {
             const isEditing = editing?.id === coin.id;
-
             return (
               <div key={coin.id} className="bg-cream-dark border border-cream-border rounded-lg p-4">
                 <div className="flex items-start justify-between gap-4">
@@ -97,29 +138,23 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
                     {isEditing ? (
                       <div className="space-y-2 mb-2">
                         <div>
-                          <label className="text-xs text-text-muted">Coin Name</label>
-                          <input
-                            value={editing.coin_name}
+                          <label className="text-xs text-text-muted">Coin Name (max 32)</label>
+                          <input value={editing.coin_name} maxLength={32}
                             onChange={e => setEditing({ ...editing, coin_name: e.target.value })}
-                            className="w-full px-2 py-1 text-sm rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary font-bold"
-                          />
+                            className="w-full px-2 py-1 text-sm rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary font-bold" />
                         </div>
                         <div>
-                          <label className="text-xs text-text-muted">Phrase / Ticker</label>
-                          <input
-                            value={editing.coin_phrase}
+                          <label className="text-xs text-text-muted">Ticker (max 13)</label>
+                          <input value={editing.coin_phrase} maxLength={13}
                             onChange={e => setEditing({ ...editing, coin_phrase: e.target.value })}
-                            className="w-full px-2 py-1 text-sm rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary italic"
-                          />
+                            className="w-full px-2 py-1 text-sm rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary" />
                         </div>
                         <div>
                           <label className="text-xs text-text-muted">Contract Address</label>
-                          <input
-                            value={editing.contract_address}
+                          <input value={editing.contract_address}
                             onChange={e => setEditing({ ...editing, contract_address: e.target.value })}
                             placeholder="Enter after launching coin"
-                            className="w-full px-2 py-1 text-sm rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary font-mono"
-                          />
+                            className="w-full px-2 py-1 text-sm rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary font-mono" />
                         </div>
                         <div className="flex gap-2">
                           <button onClick={saveEdit} className="px-3 py-1 text-xs bg-primary text-white rounded hover:bg-primary-hover">Save</button>
@@ -132,7 +167,7 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
                           <span className="font-bold text-text-primary">{coin.coin_name}</span>
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(coin.status)}`}>{coin.status}</span>
                         </div>
-                        <p className="text-sm text-text-secondary italic">"{coin.coin_phrase}"</p>
+                        <p className="text-sm text-text-secondary">Ticker: {coin.coin_phrase}</p>
                         {coin.contract_address && <p className="text-xs text-primary font-mono mt-1">CA: {coin.contract_address}</p>}
                         <p className="text-xs text-text-muted mt-1">Wallet: {coin.wallet_address.slice(0, 8)}...{coin.wallet_address.slice(-4)}</p>
                         <p className="text-xs text-text-muted">{new Date(coin.created_at).toLocaleString()}</p>
@@ -140,7 +175,6 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
                       </>
                     )}
                   </div>
-
                   {!isEditing && coin.status === 'pending' && (
                     <div className="flex gap-2">
                       <button onClick={() => handleUpdate(coin.id, { status: 'approved' })} className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">✓ Approve</button>
