@@ -20,14 +20,20 @@ export interface CoinLaunch {
 }
 
 const STORAGE_KEY = 'linkedinscope_coins';
+let cached: { raw: string; parsed: CoinLaunch[] } = { raw: '', parsed: [] };
 
 function getCoins(): CoinLaunch[] {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
+  const raw = localStorage.getItem(STORAGE_KEY) || '[]';
+  if (raw !== cached.raw) {
+    try { cached = { raw, parsed: JSON.parse(raw) }; } catch { cached = { raw, parsed: [] }; }
+  }
+  return cached.parsed;
 }
 
 function saveCoins(coins: CoinLaunch[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(coins));
+  const raw = JSON.stringify(coins);
+  cached = { raw, parsed: coins };
+  localStorage.setItem(STORAGE_KEY, raw);
   window.dispatchEvent(new Event('coins-updated'));
 }
 
@@ -37,6 +43,8 @@ const subscribe = (cb: () => void) => {
   return () => { window.removeEventListener('coins-updated', cb); window.removeEventListener('storage', cb); };
 };
 
+const getSnapshot = () => localStorage.getItem(STORAGE_KEY) || '[]';
+
 export function useCoinLaunch() {
   const createCoinMetadata = useCallback(async (params: {
     applicationId: string; jobId: string; walletAddress: string; employerName: string;
@@ -44,18 +52,11 @@ export function useCoinLaunch() {
     const shortAddr = params.walletAddress.slice(0, 6);
     const phrase = DEGEN_PHRASES[Math.floor(Math.random() * DEGEN_PHRASES.length)];
     const coinName = `${params.employerName.split(' ')[0]}x${shortAddr}`;
-
     const coin: CoinLaunch = {
-      id: crypto.randomUUID(),
-      application_id: params.applicationId,
-      job_id: params.jobId,
-      wallet_address: params.walletAddress,
-      coin_name: coinName,
-      coin_phrase: phrase,
-      status: 'pending',
-      created_at: new Date().toISOString(),
+      id: crypto.randomUUID(), application_id: params.applicationId, job_id: params.jobId,
+      wallet_address: params.walletAddress, coin_name: coinName, coin_phrase: phrase,
+      status: 'pending', created_at: new Date().toISOString(),
     };
-
     saveCoins([...getCoins(), coin]);
     return coin;
   }, []);
@@ -63,17 +64,9 @@ export function useCoinLaunch() {
   return { createCoinMetadata };
 }
 
-export function useCoinForJob(jobId: string, walletAddress: string | undefined) {
-  const coin = useSyncExternalStore(subscribe, () => {
-    if (!walletAddress) return null;
-    return getCoins().find(c => c.job_id === jobId && c.wallet_address === walletAddress) ?? null;
-  });
-  return { data: coin };
-}
-
-export function useAllCoins() {
-  const coins = useSyncExternalStore(subscribe, () => getCoins());
-  return coins;
+export function useAllCoins(): CoinLaunch[] {
+  useSyncExternalStore(subscribe, getSnapshot);
+  return getCoins();
 }
 
 export function updateCoin(id: string, updates: Partial<CoinLaunch>) {

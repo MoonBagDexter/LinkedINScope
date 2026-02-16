@@ -34,12 +34,22 @@ export function AdminPanel({ onBack }: { onBack: () => void }) {
 
 function AdminDashboard({ onBack }: { onBack: () => void }) {
   const coins = useAllCoins();
-  const [editingCA, setEditingCA] = useState<{ id: string; value: string } | null>(null);
+  const [editing, setEditing] = useState<{ id: string; coin_name: string; coin_phrase: string; contract_address: string } | null>(null);
   const [, forceUpdate] = useState(0);
 
   const handleUpdate = (id: string, updates: Partial<CoinLaunch>) => {
     updateCoin(id, updates);
     forceUpdate(n => n + 1);
+  };
+
+  const startEdit = (coin: CoinLaunch) => {
+    setEditing({ id: coin.id, coin_name: coin.coin_name, coin_phrase: coin.coin_phrase, contract_address: coin.contract_address || '' });
+  };
+
+  const saveEdit = () => {
+    if (!editing) return;
+    handleUpdate(editing.id, { coin_name: editing.coin_name, coin_phrase: editing.coin_phrase, contract_address: editing.contract_address || undefined });
+    setEditing(null);
   };
 
   const pending = coins.filter(c => c.status === 'pending');
@@ -77,51 +87,70 @@ function AdminDashboard({ onBack }: { onBack: () => void }) {
         <p className="text-text-muted text-center py-8">No coin launches yet. Apply to a job to generate one.</p>
       ) : (
         <div className="space-y-3">
-          {coins.map(coin => (
-            <div key={coin.id} className="bg-cream-dark border border-cream-border rounded-lg p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold text-text-primary">{coin.coin_name}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(coin.status)}`}>{coin.status}</span>
-                  </div>
-                  <p className="text-sm text-text-secondary italic">"{coin.coin_phrase}"</p>
-                  <p className="text-xs text-text-muted mt-1">Wallet: {coin.wallet_address.slice(0, 8)}...{coin.wallet_address.slice(-4)}</p>
-                  <p className="text-xs text-text-muted">{new Date(coin.created_at).toLocaleString()}</p>
+          {coins.map(coin => {
+            const isEditing = editing?.id === coin.id;
 
-                  {coin.status === 'approved' && (
-                    <div className="mt-2 flex gap-2">
-                      {editingCA?.id === coin.id ? (
-                        <>
+            return (
+              <div key={coin.id} className="bg-cream-dark border border-cream-border rounded-lg p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    {isEditing ? (
+                      <div className="space-y-2 mb-2">
+                        <div>
+                          <label className="text-xs text-text-muted">Coin Name</label>
                           <input
-                            value={editingCA.value}
-                            onChange={e => setEditingCA({ ...editingCA, value: e.target.value })}
-                            placeholder="Enter contract address"
-                            className="flex-1 px-2 py-1 text-xs rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary"
+                            value={editing.coin_name}
+                            onChange={e => setEditing({ ...editing, coin_name: e.target.value })}
+                            className="w-full px-2 py-1 text-sm rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary font-bold"
                           />
-                          <button
-                            onClick={() => { handleUpdate(coin.id, { contract_address: editingCA.value }); setEditingCA(null); }}
-                            className="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary-hover"
-                          >Save</button>
-                        </>
-                      ) : (
-                        <button onClick={() => setEditingCA({ id: coin.id, value: coin.contract_address || '' })} className="text-xs text-primary hover:underline">
-                          {coin.contract_address ? `CA: ${coin.contract_address.slice(0, 12)}... (edit)` : '+ Add Contract Address'}
-                        </button>
-                      )}
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-muted">Phrase / Ticker</label>
+                          <input
+                            value={editing.coin_phrase}
+                            onChange={e => setEditing({ ...editing, coin_phrase: e.target.value })}
+                            className="w-full px-2 py-1 text-sm rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary italic"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-muted">Contract Address</label>
+                          <input
+                            value={editing.contract_address}
+                            onChange={e => setEditing({ ...editing, contract_address: e.target.value })}
+                            placeholder="Enter after launching coin"
+                            className="w-full px-2 py-1 text-sm rounded border border-cream-border bg-cream focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={saveEdit} className="px-3 py-1 text-xs bg-primary text-white rounded hover:bg-primary-hover">Save</button>
+                          <button onClick={() => setEditing(null)} className="px-3 py-1 text-xs border border-cream-border rounded hover:bg-cream">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-text-primary">{coin.coin_name}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(coin.status)}`}>{coin.status}</span>
+                        </div>
+                        <p className="text-sm text-text-secondary italic">"{coin.coin_phrase}"</p>
+                        {coin.contract_address && <p className="text-xs text-primary font-mono mt-1">CA: {coin.contract_address}</p>}
+                        <p className="text-xs text-text-muted mt-1">Wallet: {coin.wallet_address.slice(0, 8)}...{coin.wallet_address.slice(-4)}</p>
+                        <p className="text-xs text-text-muted">{new Date(coin.created_at).toLocaleString()}</p>
+                        <button onClick={() => startEdit(coin)} className="text-xs text-primary hover:underline mt-1">✏️ Edit metadata</button>
+                      </>
+                    )}
+                  </div>
+
+                  {!isEditing && coin.status === 'pending' && (
+                    <div className="flex gap-2">
+                      <button onClick={() => handleUpdate(coin.id, { status: 'approved' })} className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">✓ Approve</button>
+                      <button onClick={() => handleUpdate(coin.id, { status: 'rejected' })} className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors">✗ Reject</button>
                     </div>
                   )}
                 </div>
-
-                {coin.status === 'pending' && (
-                  <div className="flex gap-2">
-                    <button onClick={() => handleUpdate(coin.id, { status: 'approved' })} className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">✓ Approve</button>
-                    <button onClick={() => handleUpdate(coin.id, { status: 'rejected' })} className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors">✗ Reject</button>
-                  </div>
-                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
