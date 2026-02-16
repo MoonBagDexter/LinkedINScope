@@ -14,13 +14,13 @@ export const useWallet = () => useContext(WalletContext);
 const solanaConnectors = toSolanaWalletConnectors({ shouldAutoConnect: true });
 
 function PrivyBridge({ children }: { children: ReactNode }) {
-  const { connectWallet, authenticated, logout } = usePrivy();
+  const { login, authenticated, logout, ready } = usePrivy();
   const { wallets } = useWallets();
-  const address = authenticated && wallets[0] ? wallets[0].address : null;
+  const address = ready && authenticated && wallets[0] ? wallets[0].address : null;
   return (
     <WalletContext.Provider value={{
       address,
-      connect: () => connectWallet({ walletList: ['phantom'] }),
+      connect: login,
       disconnect: logout,
     }}>
       {children}
@@ -33,8 +33,14 @@ export function WalletProviderWrapper({ children }: { children: ReactNode }) {
     <PrivyProvider
       appId={import.meta.env.VITE_PRIVY_APP_ID}
       config={{
-        appearance: { walletChainType: 'solana-only' },
-        externalWallets: { solana: { connectors: solanaConnectors } },
+        loginMethods: ['wallet'],
+        appearance: {
+          walletChainType: 'solana-only',
+          showWalletLoginFirst: true,
+        },
+        externalWallets: {
+          solana: { connectors: solanaConnectors },
+        },
       }}
     >
       <PrivyBridge>{children}</PrivyBridge>
