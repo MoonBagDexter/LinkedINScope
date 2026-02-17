@@ -5,4 +5,4 @@ builder = "NIXPACKS"
 NODE_ENV = "production"
 
 [deploy]
-startCommand = "npx serve dist -s -l $PORT"
+startCommand = "node server.js"

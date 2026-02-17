@@ -33,7 +33,6 @@ export function JobCard({ job, appStatus, onQuickApply, onOpenApplyForm, onShare
 
   const initials = getCompanyInitials(job.employer_name);
   const logoColor = getCompanyColor(job.employer_name);
-  const logoUrl = `https://logo.clearbit.com/${job.employer_name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
   const location = [job.job_city, job.job_state].filter(Boolean).join(', ') || 'USA';
 
   return (
@@ -45,9 +44,11 @@ export function JobCard({ job, appStatus, onQuickApply, onOpenApplyForm, onShare
       <div className="flex items-center gap-4">
         <div className="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg overflow-hidden shadow-md"
           style={{ backgroundColor: logoColor }}>
-          <img src={job.employer_logo || logoUrl} alt={job.employer_name}
-            className="w-14 h-14 rounded-full object-cover"
-            onError={(e) => { const el = e.target as HTMLImageElement; el.style.display = 'none'; el.parentElement!.textContent = initials; }} />
+          {job.employer_logo ? (
+            <img src={job.employer_logo} alt={job.employer_name}
+              className="w-14 h-14 rounded-full object-cover"
+              onError={(e) => { const el = e.target as HTMLImageElement; el.style.display = 'none'; el.parentElement!.textContent = initials; }} />
+          ) : initials}
         </div>
 
         <div className="flex-1 min-w-0">
